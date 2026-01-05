@@ -1,0 +1,42 @@
+\section{Introduction}
+\label{sec:introduction}
+
+\subsection{Background and Motivation}
+
+Deep reinforcement learning (DRL) has achieved remarkable success in solving complex sequential decision-making problems, from game playing to robotic control. The extension to multi-agent settings, known as multi-agent deep reinforcement learning (MADRL), addresses scenarios where multiple agents must learn to coordinate or compete in shared environments. Actor-critic architectures, particularly the Multi-Agent Deep Deterministic Policy Gradient (MADDPG) algorithm~\cite{lowe2017multi}, have become foundational approaches for continuous control in multi-agent systems.
+
+In actor-critic methods, the actor network learns a policy that maps states to actions, while the critic network estimates the value of state-action pairs to guide policy improvement. This architectural separation creates an inherent asymmetry in how gradients flow through the system during training. The critic receives direct supervision from temporal difference (TD) errors, while the actor receives indirect feedback through the critic's value estimates.
+
+Despite the widespread adoption of actor-critic MADRL, a systematic understanding of how this architectural asymmetry affects learning dynamics---particularly the differential convergence behavior between actors and critics---remains incomplete. This gap is especially significant when considering hyperparameter selection, as practitioners often observe that actors and critics exhibit different sensitivities to learning rate choices~\cite{henderson2018deep}.
+
+\subsection{Problem Statement}
+
+In our investigation of a Client-Master MADRL framework for MEC task offloading, we observed a striking phenomenon: \textbf{client agents (actors) stopped updating their neural network weights at different episode numbers depending on learning rate configurations, while the master agent (critic) continued learning until training completion}. Specifically:
+
+\begin{itemize}
+    \item With learning rates of 0.01-0.1 for client agents, all 50 actors ceased weight updates within \textbf{5 episodes}
+    \item With learning rates of 0.0001, actors maintained gradient flow throughout \textbf{2000 episodes}
+    \item The master agent (critic) \textbf{never stopped} updating weights regardless of learning rate
+\end{itemize}
+
+This differential behavior has significant implications for algorithm design, hyperparameter selection, architecture choices, and performance optimization.
+
+\subsection{Contributions}
+
+This paper makes the following contributions:
+
+\begin{enumerate}
+    \item \textbf{Empirical characterization} of the differential stopping phenomenon in Client-Master MADRL, demonstrating that actors and critics exhibit fundamentally different convergence behaviors across learning rate configurations.
+
+    \item \textbf{Theoretical analysis} identifying tanh output activation saturation as the primary mechanism causing premature actor convergence, explaining the learning-rate-dependent nature of this phenomenon.
+
+    \item \textbf{Systematic investigation} of the architectural and gradient flow factors that create asymmetry between actor and critic learning dynamics.
+
+    \item \textbf{Practical guidelines} for learning rate selection and network design to prevent premature actor convergence while maintaining stable critic learning.
+
+    \item \textbf{Experimental framework} for detecting and monitoring gradient flow asymmetries during MADRL training.
+\end{enumerate}
+
+\subsection{Paper Organization}
+
+Section~\ref{sec:related} reviews related work on actor-critic methods, gradient flow in deep learning, and hyperparameter sensitivity in DRL. Section~\ref{sec:background} presents the technical background and problem formulation. Section~\ref{sec:methodology} details our methodology and experimental setup. Section~\ref{sec:analysis} presents our analysis and findings. Section~\ref{sec:discussion} discusses implications and proposed solutions. Section~\ref{sec:conclusion} concludes the paper.

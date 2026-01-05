@@ -1,0 +1,91 @@
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Experimental Setup}
+
+Table~\ref{tab:exp_params} summarizes the experimental configuration used throughout our analysis.
+
+\begin{table}[htbp]
+\caption{Experimental Configuration}
+\label{tab:exp_params}
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Number of agents & 50 \\
+State dimension & 7 \\
+Action dimension & 3 \\
+Episodes & 2000 \\
+Steps per episode & 10 / 100 \\
+Batch size & 64 \\
+Replay memory & 10,000 \\
+Discount factor ($\gamma$) & 0.99 \\
+Target network update ($\tau$) & 1.0 (hard update) \\
+Exploration ($\epsilon$) & 1.0 $\rightarrow$ 0.01 (decay) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Learning Rate Configurations:} We tested 16 combinations of client learning rates $\eta_a \in \{0.1, 0.01, 0.001, 0.0001\}$ and master learning rates $\eta_c \in \{0.1, 0.01, 0.001, 0.0001\}$.
+
+\textbf{Controlled Variables:} To isolate the effect of learning rates, we fixed PyTorch seed (23) for identical weight initialization, NumPy seed (23) for identical exploration sequence, and environment seed (37) for identical state transitions.
+
+\subsection{Weight Update Detection}
+
+To detect when agents stop updating, we implemented checkpoint comparison after each training iteration:
+
+\begin{lstlisting}[caption={Weight change detection function}]
+def check_parameter_difference(model, checkpoint):
+    current = model.state_dict()
+    for name, param in current.items():
+        if not torch.equal(param, checkpoint[name]):
+            return True  # Weight changed
+    return False  # No change detected
+\end{lstlisting}
+
+The stopping episode is recorded as the first episode where all actors simultaneously cease weight updates.
+
+\subsection{Gradient Flow Analysis}
+
+We analyze gradient flow through the actor computation graph:
+\begin{equation}
+\frac{\partial \mathcal{L}_\text{actor}}{\partial \theta} = \frac{\partial \mathcal{L}_\text{actor}}{\partial Q} \cdot \frac{\partial Q}{\partial a} \cdot \frac{\partial a}{\partial \theta}
+\end{equation}
+
+where $\frac{\partial a}{\partial \theta}$ includes the tanh derivative:
+\begin{equation}
+\frac{\partial a}{\partial \theta} = (1 - \tanh^2(z)) \cdot \frac{\partial z}{\partial \theta}
+\end{equation}
+
+\textbf{Critical Observation:} The term $(1 - \tanh^2(z))$ approaches zero when $|z|$ is large, creating a gradient bottleneck at the output layer.
+
+\subsection{Reward Scale Analysis}
+
+From the MEC environment, the reward function is:
+\begin{equation}
+R = -(\lambda_E \cdot E + \lambda_T \cdot T) - (\lambda_E \cdot P_E + \lambda_T \cdot P_T)
+\end{equation}
+
+With $\lambda_E = \lambda_T = 0.5$ and 50 agents, rewards range from approximately \textbf{-80 to -270}.
+
+\subsection{Saturation Analysis}
+
+We model the interaction between learning rate, reward scale, and tanh saturation:
+
+\textbf{Effective Learning Rate:}
+\begin{equation}
+\Delta w \approx \eta_a \cdot |R| \cdot \nabla_w \pi
+\end{equation}
+
+For high learning rates ($\eta_a = 0.1$, $|R| \approx 100$):
+\begin{equation}
+\Delta w_{0.1} \approx 0.1 \times 100 \times \nabla_w \pi = 10 \cdot \nabla_w \pi
+\end{equation}
+
+For low learning rates ($\eta_a = 0.0001$):
+\begin{equation}
+\Delta w_{0.0001} \approx 0.0001 \times 100 \times \nabla_w \pi = 0.01 \cdot \nabla_w \pi
+\end{equation}
+
+Large weight updates can push pre-activation values into the saturation region within a few steps, while small updates allow gradual convergence within the linear region.

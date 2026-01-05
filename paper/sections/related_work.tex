@@ -1,0 +1,50 @@
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Actor-Critic Methods in Deep Reinforcement Learning}
+
+Actor-critic methods combine policy-based (actor) and value-based (critic) approaches to leverage the strengths of both~\cite{konda2000actor}. The actor learns a parameterized policy $\pi_\theta(a|s)$ that directly maps states to actions, while the critic learns a value function $Q_\phi(s,a)$ or $V_\phi(s)$ to evaluate the actor's choices.
+
+The Deep Deterministic Policy Gradient (DDPG) algorithm~\cite{lillicrap2015continuous} extended actor-critic methods to continuous action spaces using deep neural networks. DDPG employs deterministic policy gradients, where the actor gradient is computed as:
+\begin{equation}
+\nabla_\theta J \approx \mathbb{E}_{s \sim \mathcal{D}} \left[ \nabla_a Q_\phi(s,a)|_{a=\pi_\theta(s)} \cdot \nabla_\theta \pi_\theta(s) \right]
+\end{equation}
+
+This formulation creates a direct dependency between actor updates and the critic's action-value estimates, establishing the gradient flow asymmetry central to our analysis.
+
+Lowe et al.~\cite{lowe2017multi} extended DDPG to multi-agent settings with MADDPG, introducing the centralized training with decentralized execution (CTDE) paradigm. Recent work on asymmetric actor-critic frameworks has explored deliberately designing actors and critics with different input information~\cite{pinto2017asymmetric}. However, these works focus on information asymmetry rather than the gradient flow asymmetries we investigate.
+
+\subsection{Vanishing Gradients and Activation Function Saturation}
+
+The vanishing gradient problem, first identified in recurrent neural networks~\cite{hochreiter1998vanishing}, occurs when gradients diminish exponentially as they propagate backward through layers. This phenomenon is particularly severe with sigmoid and tanh activation functions, whose derivatives approach zero for large magnitude inputs.
+
+For the tanh function, the derivative is:
+\begin{equation}
+\tanh'(x) = 1 - \tanh^2(x)
+\end{equation}
+
+When $|x| > 2$, $\tanh'(x) < 0.07$, meaning more than 93\% of the gradient is suppressed~\cite{glorot2010understanding}. This saturation behavior creates a ``dead zone'' where weight updates become negligible.
+
+Traditional solutions include using non-saturating activations like ReLU in hidden layers, Xavier/He initialization, batch normalization, and residual connections~\cite{he2016deep}. However, for actor networks in continuous control, \textbf{output activations must remain bounded} to produce valid actions, necessitating the use of tanh or similar bounded functions.
+
+\subsection{Learning Rate Sensitivity in Deep Reinforcement Learning}
+
+Deep RL algorithms are notoriously sensitive to hyperparameter choices. Research by Eimer et al.~\cite{eimer2023hyperparameters} demonstrated that hyperparameters in RL have significant impact on performance, with learning rate being among the most influential parameters.
+
+The Self-Tuning Actor-Critic (STAC) algorithm~\cite{zahavy2020self} addresses hyperparameter sensitivity by using meta-gradients to adapt hyperparameters online. Critically, existing work on hyperparameter tuning for deep RL has examined actor and critic learning rates as separate parameters, implicitly acknowledging their different sensitivities~\cite{andrychowicz2020matters}. However, the underlying mechanisms causing this differential sensitivity have not been systematically characterized.
+
+\subsection{Gradient Flow Asymmetry in Actor-Critic Training}
+
+The asymmetry in gradient flow between actors and critics stems from their different loss functions and training objectives. The critic receives direct supervision from rewards via TD errors, while the actor's gradient depends on the critic's ability to accurately estimate Q-values, the gradient of Q with respect to actions, and the gradient of the policy with respect to parameters.
+
+Recent work on gradient imbalance in multi-task RL~\cite{yu2020gradient} shows that tasks producing larger gradients can bias optimization. Research on Distributional Soft Actor-Critic~\cite{ma2020dsac} identified that high variance in critic gradients can cause training instability, particularly with different reward scales.
+
+\subsection{Multi-Agent Reinforcement Learning for Mobile Edge Computing}
+
+Task offloading in MEC environments has become a prominent application domain for MADRL~\cite{wang2020multiagent}. Multiple user devices (agents) must decide whether to process tasks locally or offload them to edge servers, considering constraints on server capacity, energy consumption, and latency requirements.
+
+The CCM-MADRL algorithm~\cite{ccm_madrl} combines policy gradient optimization for client agents with value-based selection for the master agent, creating a hierarchical decision-making structure particularly interesting for gradient flow analysis.
+
+\subsection{Research Gap}
+
+While substantial work exists on individual aspects---vanishing gradients, learning rate sensitivity, actor-critic methods---\textbf{no prior work has systematically investigated how these factors interact to create differential convergence behavior between actors and critics}. This paper addresses this gap through systematic empirical and theoretical analysis.

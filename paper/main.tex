@@ -1,0 +1,74 @@
+\documentclass[conference]{IEEEtran}
+% \documentclass[journal]{IEEEtran}  % Uncomment for journal submission
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{subfig}
+\usepackage{listings}
+\usepackage{balance}
+
+% Code listing style
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    language=Python,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Asymmetric Gradient Flow and Learning Rate Sensitivity in Client-Master Multi-Agent Actor-Critic Architectures}
+
+\author{
+\IEEEauthorblockN{First Author}
+\IEEEauthorblockA{\textit{Department} \\
+\textit{University}\\
+City, Country \\
+email@example.com}
+\and
+\IEEEauthorblockN{Second Author}
+\IEEEauthorblockA{\textit{Department} \\
+\textit{University}\\
+City, Country \\
+email@example.com}
+}
+
+\maketitle
+
+\begin{abstract}
+Multi-agent deep reinforcement learning (MADRL) has emerged as a powerful paradigm for solving complex coordination problems in domains such as mobile edge computing (MEC) task offloading. However, a critical yet underexplored phenomenon in actor-critic MADRL architectures is the asymmetric convergence behavior between actor (policy) networks and critic (value) networks. In this paper, we investigate why client agents (actors) in a Client-Master MADRL framework stop updating their neural network weights at different episode numbers depending on learning rate configurations, while the master agent (critic) continues learning until training completion. Through systematic analysis of gradient flow dynamics, activation function saturation, and reward scale interactions, we identify \textbf{tanh output saturation} as the primary mechanism causing premature actor convergence. We demonstrate that this phenomenon is learning-rate-dependent, with higher learning rates (0.01-0.1) causing actor weight updates to cease within 5 episodes, while lower learning rates (0.0001) maintain gradient flow throughout training. Our analysis provides theoretical and empirical insights into the architectural factors that create gradient flow asymmetry in actor-critic methods, with implications for hyperparameter selection and network design in MADRL systems.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Multi-agent reinforcement learning, Actor-critic methods, Gradient flow, Learning rate sensitivity, Vanishing gradients, Mobile edge computing, MADDPG
+\end{IEEEkeywords}
+
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/background}
+\input{sections/methodology}
+\input{sections/analysis}
+\input{sections/discussion}
+\input{sections/conclusion}
+
+\section*{Acknowledgment}
+% Add acknowledgments here
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

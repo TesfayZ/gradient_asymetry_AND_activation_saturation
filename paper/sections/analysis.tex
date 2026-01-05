@@ -1,0 +1,139 @@
+\section{Analysis and Findings}
+\label{sec:analysis}
+
+\subsection{Empirical Results: Stopping Episode by Learning Rate}
+
+Figure~\ref{fig:stopping_episodes} shows the number of training episodes before client agents stop updating their DNN weights for different learning rate combinations. Table~\ref{tab:stopping} summarizes the key results.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/plot_num_episodes.png}
+\caption{Number of training episodes before stopping to change DNN weights of the client agents and the master agent for different combinations of learning rates.}
+\label{fig:stopping_episodes}
+\end{figure}
+
+\begin{table}[htbp]
+\caption{Episodes Before Client Agents Stop Updating}
+\label{tab:stopping}
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Client LR} & \textbf{Master LR} & \textbf{Stop Episode} & \textbf{Final Reward} \\
+\midrule
+0.1 & 0.0001 & $\sim$5 & Not converged \\
+0.01 & 0.0001 & $\sim$5 & Not converged \\
+0.001 & 0.001 & $\sim$200 & -52 \\
+0.001 & 0.0001 & $\sim$500 & -38 \\
+0.0001 & 0.001 & $>$2000 & \textbf{-34} \\
+0.0001 & 0.0001 & $>$2000 & -40 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key Observations:}
+\begin{enumerate}
+    \item Learning rates $\geq 0.01$ cause all actors to stop within 5 episodes
+    \item The master agent never stopped at any learning rate configuration
+    \item Lower client learning rates correlate with later stopping and better final performance
+    \item The optimal configuration \{0.0001, 0.001\} maintains actor learning throughout training
+\end{enumerate}
+
+\subsection{Root Cause Analysis: Tanh Output Saturation}
+
+\textbf{Finding 1: High learning rates cause rapid tanh saturation.}
+
+The actor output layer uses tanh activation: $a = \tanh(W_3^T h_2 + b_3)$. With rewards on the order of -100 and learning rate 0.1, weight updates are approximately $\Delta W_3 \approx 10 \cdot h_2$. After just a few updates, the pre-activation values grow large enough that $\tanh(z) \approx \pm 1$ and $\tanh'(z) \approx 0$, creating a gradient vanishing point at the output layer.
+
+\textbf{Finding 2: The critic's linear output is immune to saturation.}
+
+The critic output layer has no activation: $Q = W_3^T h_2 + b_3$. The gradient always flows directly: $\frac{\partial Q}{\partial W_3} = h_2$. Regardless of the Q-value magnitude, gradients remain proportional to hidden activations.
+
+\subsection{Architectural Asymmetry Analysis}
+
+Table~\ref{tab:architecture} compares the actor and critic architectures.
+
+\begin{table}[htbp]
+\caption{Actor vs Critic Architectural Comparison}
+\label{tab:architecture}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Property} & \textbf{Client (Actor)} & \textbf{Master (Critic)} \\
+\midrule
+Input dim & 7 & 360 \\
+Hidden layers & 64 $\rightarrow$ 32 & 512 $\rightarrow$ 128 \\
+Output dim & 3 & 1 \\
+Output activation & \textbf{tanh} & \textbf{Linear} \\
+Loss type & Policy gradient & MSE (TD error) \\
+Gradient source & Indirect (via Q) & Direct (rewards) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The combination of bounded (tanh) vs unbounded (linear) outputs, indirect vs direct supervision, and smaller vs larger capacity creates systematic gradient flow asymmetry favoring the critic.
+
+\subsection{Performance Analysis}
+
+Figure~\ref{fig:performance} shows performance comparison across learning rate configurations.
+
+\begin{figure}[htbp]
+\centering
+\subfloat[Evaluation environment, LR \{0.0001, 0.001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtEval_s10lre4e3.png}}
+\hfill
+\subfloat[Training environment, LR \{0.0001, 0.001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtTraining_s10lre4e3.png}}
+\\
+\subfloat[Evaluation environment, LR \{0.01, 0.0001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtEval_s10lre2e4.png}}
+\hfill
+\subfloat[Training environment, LR \{0.01, 0.0001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtTraining_s10lre2e4.png}}
+\caption{Performance comparison: (a,b) Optimal learning rates showing convergence; (c,d) High client learning rate showing poor performance due to early actor stopping.}
+\label{fig:performance}
+\end{figure}
+
+\subsection{Additional Learning Rate Comparisons}
+
+Figure~\ref{fig:additional_lr} shows performance for additional learning rate configurations, demonstrating the sensitivity to this hyperparameter choice.
+
+\begin{figure}[htbp]
+\centering
+\subfloat[LR \{0.001, 0.001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtEval_s10lre3e3.png}}
+\hfill
+\subfloat[LR \{0.001, 0.0001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtEval_s10lre3e4.png}}
+\caption{Performance with intermediate learning rate configurations.}
+\label{fig:additional_lr}
+\end{figure}
+
+\subsection{Why CCM-MADRL Continues to Improve}
+
+Despite frozen client networks, CCM-MADRL shows performance improvements because:
+\begin{enumerate}
+    \item \textbf{Master agent continues learning:} The critic refines Q-value estimates throughout training
+    \item \textbf{Selection mechanism:} The master ranks clients by Q-value, selecting optimal combinations
+    \item \textbf{Constraint satisfaction:} Better Q-estimates lead to better constraint-respecting selections
+\end{enumerate}
+
+This architectural feature provides resilience against actor stagnation, but comes at the cost of reduced policy diversity.
+
+\subsection{Performance Until Stopping vs End of Training}
+
+Figure~\ref{fig:until_stop} shows performance at the stopping point, while Figure~\ref{fig:until_end} shows performance at the end of training, demonstrating that the master agent continues to improve system performance even after actors stop.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/plot_until_stop.png}
+\caption{Performance at the stopping episode for different learning rate combinations.}
+\label{fig:until_stop}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/plot_until_end.png}
+\caption{Performance at end of training (2000 episodes) for different learning rate combinations.}
+\label{fig:until_end}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/plot_at_training.png}
+\caption{Performance on training environment for different learning rate combinations.}
+\label{fig:at_training}
+\end{figure}

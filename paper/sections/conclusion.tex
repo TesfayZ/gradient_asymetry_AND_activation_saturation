@@ -1,0 +1,16 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper investigated the phenomenon of asymmetric convergence behavior between actor and critic networks in Client-Master MADRL architectures. Our analysis revealed that \textbf{tanh output activation saturation} is the primary mechanism causing client agents to stop updating their neural network weights, with the stopping episode being strongly dependent on learning rate magnitude.
+
+Key findings include:
+\begin{enumerate}
+    \item High learning rates (0.01-0.1) cause all actors to cease weight updates within 5 episodes
+    \item The master agent (critic) never stops due to its linear output activation
+    \item The interaction between learning rate, reward scale, and bounded activations creates effective learning rates that push actors into saturation
+    \item Lower actor learning rates (0.0001) maintain gradient flow throughout training and achieve better final performance
+\end{enumerate}
+
+These findings have important implications for hyperparameter selection in actor-critic MADRL, suggesting that actors should use learning rates approximately 10$\times$ lower than critics. The architectural choice of bounded output activations, while necessary for continuous action spaces, creates an inherent vulnerability to gradient pathologies that must be managed through careful hyperparameter tuning.
+
+Future work will focus on directly measuring gradient magnitudes, exploring alternative bounded activations with better gradient properties, and validating these findings across diverse domains.

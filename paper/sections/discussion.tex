@@ -1,0 +1,91 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Theoretical Implications}
+
+Our findings reveal a \textbf{fundamental tension} in actor-critic design for continuous control:
+
+\begin{enumerate}
+    \item \textbf{Bounded outputs are necessary} for valid action generation in continuous spaces
+    \item \textbf{Bounded activations (tanh) are susceptible} to saturation and gradient vanishing
+    \item \textbf{Large reward scales and high learning rates} exacerbate saturation
+    \item \textbf{Critics with linear outputs} are immune to this specific pathology
+\end{enumerate}
+
+This creates an inherent asymmetry: critics can use aggressive learning rates, while actors require conservative rates to avoid saturation.
+
+\subsection{Practical Recommendations}
+
+Based on our analysis, we recommend:
+
+\textbf{Learning Rate Selection:}
+\begin{itemize}
+    \item Actor learning rate: 0.0001 - 0.001 (conservative)
+    \item Critic learning rate: 0.001 - 0.01 (can be 10$\times$ higher than actor)
+    \item Recommended ratio: Actor LR / Critic LR $\approx$ 0.1
+\end{itemize}
+
+\textbf{Reward Scaling:}
+\begin{itemize}
+    \item Normalize rewards to unit scale when possible
+    \item Monitor effective learning rate = $\eta \times |R|$
+    \item Keep effective LR $<$ 0.1 for actors
+\end{itemize}
+
+\textbf{Architecture Modifications:}
+\begin{itemize}
+    \item Consider replacing tanh with scaled sigmoid or softsign
+    \item Add gradient clipping on actor updates
+    \item Monitor pre-activation magnitudes during training
+\end{itemize}
+
+\textbf{Training Monitoring:}
+\begin{itemize}
+    \item Implement weight change detection for actors
+    \item Track tanh output distribution (warning if clustered at $\pm 1$)
+    \item Compare actor vs critic gradient magnitudes
+\end{itemize}
+
+\subsection{Broader Impact}
+
+This analysis has implications beyond MEC task offloading:
+
+\begin{enumerate}
+    \item \textbf{DDPG/TD3/SAC implementations:} All use tanh-bounded outputs and may exhibit similar behavior
+    \item \textbf{Hyperparameter transfer:} Learning rates optimal in one domain may fail in others with different reward scales
+    \item \textbf{Multi-agent systems:} Shared rewards amplify the effective reward scale ($N$ agents $\times$ per-agent reward)
+\end{enumerate}
+
+\subsection{Limitations and Future Work}
+
+Our analysis has several limitations that suggest directions for future research:
+
+\begin{enumerate}
+    \item \textbf{Single domain:} Analysis conducted on MEC task offloading; generalization to other domains requires verification
+    \item \textbf{Fixed architecture:} Results may differ with alternative network designs
+    \item \textbf{Deterministic seeds:} While controlled, may not capture all initialization effects
+    \item \textbf{Lack of gradient magnitude tracking:} Direct gradient measurements would strengthen analysis
+\end{enumerate}
+
+\subsection{Proposed Further Experiments}
+
+To strengthen our findings, we propose the following experiments:
+
+\textbf{High Priority:}
+\begin{itemize}
+    \item Gradient magnitude tracking: Directly measure actor vs critic gradient norms during training
+    \item Pre-activation distribution analysis: Track tanh input distribution to visualize saturation
+\end{itemize}
+
+\textbf{Medium Priority:}
+\begin{itemize}
+    \item Alternative output activations: Compare softsign, hardtanh vs tanh
+    \item Reward normalization study: Evaluate impact on stopping behavior
+    \item Layer-wise learning rates: Use lower LR for output layer only
+\end{itemize}
+
+\textbf{Lower Priority:}
+\begin{itemize}
+    \item Cross-domain validation: Test on MuJoCo/other environments
+    \item Entropy regularization: Add entropy bonus to prevent saturation
+\end{itemize}
