@@ -11,15 +11,19 @@ Despite the widespread adoption of actor-critic MADRL, a systematic understandin
 
 \subsection{Problem Statement}
 
-In our investigation of a Client-Master MADRL framework for MEC task offloading, we observed a striking phenomenon: \textbf{client agents (actors) stopped updating their neural network weights at different episode numbers depending on learning rate configurations, while the master agent (critic) continued learning until training completion}. Specifically:
+In our prior work on the Client-Master MADRL framework (CCM-MADRL) for MEC task offloading~\cite{ccm_madrl, gebrekidan2024thesis}, we conducted hyperparameter tuning experiments involving 16 combinations of learning rates. During this investigation, we observed a striking phenomenon: \textbf{client agents (actors) exhibited weight update cessation}---their neural network parameters stopped changing within $\sim$5 episodes under high learning rate configurations, while the master agent (critic) continued learning until training completion. Only 2 of 16 learning rate combinations produced stable actor learning throughout the full 2000 episodes. Figure~\ref{fig:thesis_stopping} illustrates this phenomenon from our original experiments.
 
-\begin{itemize}
-    \item With learning rates of 0.01-0.1 for client agents, all 50 actors ceased weight updates within \textbf{5 episodes}
-    \item With learning rates of 0.0001, actors maintained gradient flow throughout \textbf{2000 episodes}
-    \item The master agent (critic) \textbf{never stopped} updating weights regardless of learning rate
-\end{itemize}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig0_thesis_stopping.png}
+\Description{Bubble plot from thesis experiments showing stopping episodes. High actor learning rates (0.01, 0.1) result in stopping at exactly 5 episodes across all critic LR values. Lower actor LRs (0.0001, 0.001) show varied stopping times from 27 to 1999 episodes, with the lowest actor LR achieving near-complete training.}
+\caption{Original thesis results~\cite{gebrekidan2024thesis}: Stopping episodes across 16 learning rate combinations. Bubble size indicates episodes before actors stop updating. High actor learning rates ($\geq$0.01) cause immediate stopping at $\sim$5 episodes (rightmost columns), while lower rates allow extended training. This observation motivated the current investigation.}
+\label{fig:thesis_stopping}
+\end{figure}
 
-This differential behavior has significant implications for algorithm design, hyperparameter selection, architecture choices, and performance optimization.
+\textit{Terminology:} Throughout this paper, we use ``weight update cessation'' or ``stopping'' to describe the phenomenon where gradient updates become negligible (parameter changes $<10^{-8}$) due to activation saturation, distinct from intentional early stopping or convergence to an optimum.
+
+While our prior work identified the optimal learning rate configurations empirically, the \textit{underlying mechanism} causing this asymmetric behavior remained unexplained. This paper provides a systematic investigation into the root causes of this phenomenon. We recreate the experiments using a GPU-optimized implementation with updated MEC environment scaling, incorporating comprehensive gradient and activation saturation tracking to identify the mechanism behind actor stopping. Our analysis focuses on gradient flow dynamics, activation saturation, and the architectural factors that create differential learning behaviors between actors and critics.
 
 \subsection{Contributions}
 

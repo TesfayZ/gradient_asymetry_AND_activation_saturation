@@ -3,48 +3,98 @@
 
 \subsection{Actor-Critic Methods in Deep Reinforcement Learning}
 
-Actor-critic methods combine policy-based (actor) and value-based (critic) approaches to leverage the strengths of both~\cite{konda2000actor}. The actor learns a parameterized policy $\pi_\theta(a|s)$ that directly maps states to actions, while the critic learns a value function $Q_\phi(s,a)$ or $V_\phi(s)$ to evaluate the actor's choices.
+Actor-critic methods combine policy-based (actor) and value-based (critic) approaches to leverage the strengths of both~\cite{konda2000actor}. The theoretical foundations were established by Sutton et al.~\cite{sutton2000policy}, who proved that policy gradient methods converge to locally optimal policies under certain conditions. The actor learns a parameterized policy $\pi_\theta(a|s)$ that directly maps states to actions, while the critic learns a value function $Q_\phi(s,a)$ or $V_\phi(s)$ to evaluate the actor's choices and reduce variance in policy gradient estimates.
 
-The Deep Deterministic Policy Gradient (DDPG) algorithm~\cite{lillicrap2015continuous} extended actor-critic methods to continuous action spaces using deep neural networks. DDPG employs deterministic policy gradients, where the actor gradient is computed as:
+The Deep Deterministic Policy Gradient (DDPG) algorithm~\cite{lillicrap2015continuous} extended actor-critic methods to continuous action spaces using deep neural networks, building on the deterministic policy gradient theorem~\cite{silver2014deterministic}. DDPG employs deterministic policy gradients, where the actor gradient is computed as:
 \begin{equation}
 \nabla_\theta J \approx \mathbb{E}_{s \sim \mathcal{D}} \left[ \nabla_a Q_\phi(s,a)|_{a=\pi_\theta(s)} \cdot \nabla_\theta \pi_\theta(s) \right]
 \end{equation}
 
-This formulation creates a direct dependency between actor updates and the critic's action-value estimates, establishing the gradient flow asymmetry central to our analysis.
+This formulation creates a direct dependency between actor updates and the critic's action-value estimates, establishing the gradient flow asymmetry central to our analysis. The chain rule multiplication means actor gradients are inherently attenuated compared to critic gradients, which receive direct supervision from TD errors.
 
-Lowe et al.~\cite{lowe2017multi} extended DDPG to multi-agent settings with MADDPG, introducing the centralized training with decentralized execution (CTDE) paradigm. Recent work on asymmetric actor-critic frameworks has explored deliberately designing actors and critics with different input information~\cite{pinto2017asymmetric}. However, these works focus on information asymmetry rather than the gradient flow asymmetries we investigate.
+Subsequent algorithms have built upon DDPG to address its limitations. Twin Delayed DDPG (TD3)~\cite{fujimoto2018addressing} introduced clipped double Q-learning and delayed policy updates to reduce overestimation bias. Soft Actor-Critic (SAC)~\cite{haarnoja2018soft} incorporated entropy regularization for improved exploration and stability. Proximal Policy Optimization (PPO)~\cite{schulman2017proximal} and Asynchronous Advantage Actor-Critic (A3C)~\cite{mnih2016asynchronous} offered alternative approaches with different trade-offs. However, all these methods share the fundamental actor-critic structure and thus potentially exhibit similar gradient asymmetries.
+
+Lowe et al.~\cite{lowe2017multi} extended DDPG to multi-agent settings with MADDPG, introducing the centralized training with decentralized execution (CTDE) paradigm. Recent work on asymmetric actor-critic frameworks has explored deliberately designing actors and critics with different input information~\cite{pinto2017asymmetric}. However, these works focus on \textit{information} asymmetry rather than the \textit{gradient flow} asymmetries we investigate.
 
 \subsection{Vanishing Gradients and Activation Function Saturation}
 
-The vanishing gradient problem, first identified in recurrent neural networks~\cite{hochreiter1998vanishing}, occurs when gradients diminish exponentially as they propagate backward through layers. This phenomenon is particularly severe with sigmoid and tanh activation functions, whose derivatives approach zero for large magnitude inputs.
+The vanishing gradient problem, first identified in recurrent neural networks~\cite{hochreiter1998vanishing}, occurs when gradients diminish exponentially as they propagate backward through layers. Bengio et al.~\cite{bengio1994learning} provided theoretical analysis showing that gradient magnitudes can decay exponentially with network depth when using saturating activations. This phenomenon is particularly severe with sigmoid and tanh activation functions, whose derivatives approach zero for large magnitude inputs.
 
 For the tanh function, the derivative is:
 \begin{equation}
 \tanh'(x) = 1 - \tanh^2(x)
 \end{equation}
 
-When $|x| > 2$, $\tanh'(x) < 0.07$, meaning more than 93\% of the gradient is suppressed~\cite{glorot2010understanding}. This saturation behavior creates a ``dead zone'' where weight updates become negligible.
+When $|x| > 2$, $\tanh'(x) < 0.07$, meaning more than 93\% of the gradient is suppressed~\cite{glorot2010understanding}. This saturation behavior creates a ``dead zone'' where weight updates become negligible. Pascanu et al.~\cite{pascanu2013difficulty} further characterized the conditions under which gradients vanish or explode, providing bounds on gradient norms during backpropagation.
 
-Traditional solutions include using non-saturating activations like ReLU in hidden layers, Xavier/He initialization, batch normalization, and residual connections~\cite{he2016deep}. However, for actor networks in continuous control, \textbf{output activations must remain bounded} to produce valid actions, necessitating the use of tanh or similar bounded functions.
+Traditional solutions include using non-saturating activations like ReLU~\cite{nair2010rectified} in hidden layers, Xavier/He initialization~\cite{glorot2010understanding, he2015delving}, batch normalization~\cite{ioffe2015batch}, and residual connections~\cite{he2016deep}. However, for actor networks in continuous control, \textbf{output activations must remain bounded} to produce valid actions, necessitating the use of tanh or similar bounded functions. This architectural requirement creates an unavoidable vulnerability to gradient saturation at the output layer, a constraint that does not apply to critic networks with unbounded outputs.
 
 \subsection{Learning Rate Sensitivity in Deep Reinforcement Learning}
 
-Deep RL algorithms are notoriously sensitive to hyperparameter choices. Research by Eimer et al.~\cite{eimer2023hyperparameters} demonstrated that hyperparameters in RL have significant impact on performance, with learning rate being among the most influential parameters.
+Deep RL algorithms are notoriously sensitive to hyperparameter choices, a challenge that has been extensively documented in the literature. Henderson et al.~\cite{henderson2018deep} conducted a landmark study demonstrating that reported performance in deep RL can vary dramatically based on hyperparameter selection, random seeds, and implementation details. Eimer et al.~\cite{eimer2023hyperparameters} provided a comprehensive analysis showing that learning rate is among the most influential hyperparameters, with suboptimal choices leading to complete training failure.
 
-The Self-Tuning Actor-Critic (STAC) algorithm~\cite{zahavy2020self} addresses hyperparameter sensitivity by using meta-gradients to adapt hyperparameters online. Critically, existing work on hyperparameter tuning for deep RL has examined actor and critic learning rates as separate parameters, implicitly acknowledging their different sensitivities~\cite{andrychowicz2020matters}. However, the underlying mechanisms causing this differential sensitivity have not been systematically characterized.
+The Self-Tuning Actor-Critic (STAC) algorithm~\cite{zahavy2020self} addresses hyperparameter sensitivity by using meta-gradients to adapt hyperparameters online. Andrychowicz et al.~\cite{andrychowicz2020matters} conducted a large-scale empirical study on on-policy methods, finding that actor and critic learning rates require separate tuning---implicitly acknowledging their different sensitivities. Islam et al.~\cite{islam2017reproducibility} highlighted reproducibility challenges in deep RL, noting that learning rate is a critical factor in achieving stable training.
+
+However, the underlying mechanisms causing this differential sensitivity between actors and critics have not been systematically characterized. Our work addresses this gap by providing both theoretical analysis and empirical evidence for the gradient flow asymmetry that makes actors more sensitive to learning rate selection.
 
 \subsection{Gradient Flow Asymmetry in Actor-Critic Training}
 
-The asymmetry in gradient flow between actors and critics stems from their different loss functions and training objectives. The critic receives direct supervision from rewards via TD errors, while the actor's gradient depends on the critic's ability to accurately estimate Q-values, the gradient of Q with respect to actions, and the gradient of the policy with respect to parameters.
+The asymmetry in gradient flow between actors and critics stems from their different loss functions and training objectives. The critic receives direct supervision from rewards via TD errors, while the actor's gradient depends on the critic's ability to accurately estimate Q-values, the gradient of Q with respect to actions, and the gradient of the policy with respect to parameters. This creates a multiplicative chain that inherently attenuates actor gradients.
 
-Recent work on gradient imbalance in multi-task RL~\cite{yu2020gradient} shows that tasks producing larger gradients can bias optimization. Research on Distributional Soft Actor-Critic~\cite{ma2020dsac} identified that high variance in critic gradients can cause training instability, particularly with different reward scales.
+Recent work on gradient imbalance in multi-task RL~\cite{yu2020gradient} shows that tasks producing larger gradients can dominate optimization, potentially starving other objectives. Chen et al.~\cite{chen2021gradient} introduced gradient normalization techniques to balance conflicting gradients in multi-objective settings. Research on Distributional Soft Actor-Critic~\cite{ma2020dsac} identified that high variance in critic gradients can cause training instability, particularly with different reward scales.
+
+The phenomenon of ``gradient interference'' between actors and critics has been noted implicitly in the literature. Cobbe et al.~\cite{cobbe2021phasic} proposed Phasic Policy Gradient (PPG), which separates policy and value function training phases to avoid interference. Ilyas et al.~\cite{ilyas2020closer} examined the optimization landscape in policy gradient methods, finding that policy networks can converge to suboptimal solutions when gradients are poorly conditioned.
 
 \subsection{Multi-Agent Reinforcement Learning for Mobile Edge Computing}
 
-Task offloading in MEC environments has become a prominent application domain for MADRL~\cite{wang2020multiagent}. Multiple user devices (agents) must decide whether to process tasks locally or offload them to edge servers, considering constraints on server capacity, energy consumption, and latency requirements.
+Task offloading in MEC environments has become a prominent application domain for MADRL~\cite{wang2020multiagent}. Multiple user devices (agents) must decide whether to process tasks locally or offload them to edge servers, considering constraints on server capacity, energy consumption, and latency requirements. The multi-agent formulation is natural as devices make independent decisions that collectively affect system performance~\cite{chen2019optimized}.
 
-The CCM-MADRL algorithm~\cite{ccm_madrl} combines policy gradient optimization for client agents with value-based selection for the master agent, creating a hierarchical decision-making structure particularly interesting for gradient flow analysis.
+The CCM-MADRL algorithm~\cite{ccm_madrl} combines policy gradient optimization for client agents with value-based selection for the master agent, creating a hierarchical decision-making structure. This architecture, where multiple actors share feedback from a centralized critic, provides an ideal testbed for studying gradient flow asymmetries, as the shared reward signal and coordinated training expose the differential behavior between actor and critic networks.
+
+\subsection{Neural Network Architecture Design and Gradient Flow Implications}
+
+The design of neural network architectures for actor-critic methods has received considerable attention, though principled guidelines remain elusive. Understanding these choices is critical for our analysis, as network architecture directly affects gradient flow and saturation behavior.
+
+\subsubsection{Hidden Layer Configuration and Gradient Path Length}
+
+Henderson et al.~\cite{henderson2018deep} surveyed common practices, finding that two hidden layers with 64--400 neurons per layer are typical. The original DDPG paper~\cite{lillicrap2015continuous} used 400-300 neurons, while Raffin et al.~\cite{raffin2021smooth} found 256 neurons per layer sufficient for most tasks. OpenAI's Spinning Up~\cite{spinningup2018} recommends starting with two layers of 64 neurons.
+
+From a gradient flow perspective, these choices have important implications. Deeper networks increase the gradient path length, compounding the vanishing gradient effect described by Bengio et al.~\cite{bengio1994learning}. For actors with tanh output activations, each additional layer multiplies the gradient by factors that can be less than one, exacerbating the saturation problem we investigate. This may explain Ota et al.'s~\cite{ota2020can} finding that deeper actor networks can harm performance.
+
+\subsubsection{Actor vs Critic Architecture Asymmetry}
+
+A notable pattern in the literature is that \textbf{critics are typically larger than actors}, a design choice directly relevant to gradient asymmetry. Table~\ref{tab:arch_comparison} summarizes common configurations.
+
+\begin{table}[htbp]
+\caption{Actor vs Critic Architecture Comparison in Literature}
+\label{tab:arch_comparison}
+\centering
+\footnotesize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Algorithm} & \textbf{Actor} & \textbf{Critic} & \textbf{Ratio} \\
+\midrule
+DDPG~\cite{lillicrap2015continuous} & 400-300 & 400-300 & 1:1 \\
+TD3~\cite{fujimoto2018addressing} & 256-256 & 256-256 & 1:1 \\
+SAC~\cite{haarnoja2018soft} & 256-256 & 256-256 & 1:1 \\
+MADDPG~\cite{lowe2017multi} & 64-64 & 1024-1024 & 1:16 \\
+CCM-MADRL~\cite{ccm_madrl} & 64-32 & 512-128 & 1:8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Existing justifications for larger critics include: (1) critics process joint state-action information in MARL~\cite{lowe2017multi}, (2) value landscapes are more complex than policy mappings~\cite{wang2016dueling}, and (3) accurate value estimation is critical for stable policy improvement~\cite{fujimoto2018addressing}. However, these explanations do not address why actors \textit{should} be smaller.
+
+Our gradient asymmetry analysis provides a complementary explanation: because critics use linear output activations while actors use bounded tanh activations, critics can support larger architectures without gradient pathologies. Larger actor networks accumulate more gradient attenuation through additional layers, making them more susceptible to the saturation effects we characterize in this paper. Thus, the empirical preference for smaller actors may be an implicit adaptation to the gradient flow constraints imposed by bounded output activations.
 
 \subsection{Research Gap}
 
-While substantial work exists on individual aspects---vanishing gradients, learning rate sensitivity, actor-critic methods---\textbf{no prior work has systematically investigated how these factors interact to create differential convergence behavior between actors and critics}. This paper addresses this gap through systematic empirical and theoretical analysis.
+While substantial work exists on individual aspects---vanishing gradients in deep networks, learning rate sensitivity in RL, and actor-critic optimization---\textbf{no prior work has systematically investigated how these factors interact to create differential convergence behavior between actors and critics}. Specifically:
+\begin{itemize}
+    \item Vanishing gradient research has focused on deep networks generally, not on the specific vulnerability of bounded output layers in actor networks
+    \item Hyperparameter sensitivity studies have documented that actors and critics need different learning rates, but not explained \textit{why}
+    \item Actor-critic literature has addressed value estimation accuracy and policy optimization, but not the gradient magnitude asymmetry between the two
+    \item Architecture design has favored larger critics empirically, but without connecting this to gradient flow properties
+\end{itemize}
+
+This paper bridges these research areas by demonstrating that the combination of bounded output activations, indirect gradient flow, and reward scale creates a systematic gradient asymmetry that explains the observed differential learning rate sensitivity and provides theoretical grounding for architectural asymmetry.

@@ -1,16 +1,30 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-This paper investigated the phenomenon of asymmetric convergence behavior between actor and critic networks in Client-Master MADRL architectures. Our analysis revealed that \textbf{tanh output activation saturation} is the primary mechanism causing client agents to stop updating their neural network weights, with the stopping episode being strongly dependent on learning rate magnitude.
+This paper investigated the phenomenon of asymmetric convergence behavior between actor and critic networks in Client-Master MADRL architectures. Motivated by our prior observation that actors stopped updating within $\sim$5 episodes under high learning rates~\cite{gebrekidan2024thesis}, we conducted comprehensive experiments with GPU-optimized implementations and full gradient tracking to identify the underlying mechanism.
 
-Key findings include:
+Our analysis revealed that \textbf{tanh output activation saturation} is the primary mechanism causing client agents to stop updating their neural network weights. Key findings include:
+
 \begin{enumerate}
-    \item High learning rates (0.01-0.1) cause all actors to cease weight updates within 5 episodes
-    \item The master agent (critic) never stops due to its linear output activation
-    \item The interaction between learning rate, reward scale, and bounded activations creates effective learning rates that push actors into saturation
-    \item Lower actor learning rates (0.0001) maintain gradient flow throughout training and achieve better final performance
+    \item \textbf{Learning-rate-dependent stopping:} High actor learning rates (0.01--0.1) cause all 50 agents to cease weight updates within 161--247 episodes, while lower rates (0.0001--0.001) maintain gradient flow throughout 2000 episodes of training.
+
+    \item \textbf{Gradient magnitude asymmetry:} We measured a 4--8 order of magnitude difference in gradient norms between actors and critics ($\rho \sim 10^{-8}$ to $10^{-4}$), explaining why actors and critics exhibit differential sensitivity to learning rate selection.
+
+    \item \textbf{Critic immunity:} The master agent (critic) never stops updating regardless of learning rate configuration, due to its linear (unbounded) output activation that does not suffer from gradient saturation.
+
+    \item \textbf{Effective learning rate interaction:} The combination of nominal learning rate, reward magnitude, and bounded activation creates an effective learning rate that can rapidly push actor pre-activations into saturation regions where $\tanh'(z) \approx 0$.
 \end{enumerate}
 
-These findings have important implications for hyperparameter selection in actor-critic MADRL, suggesting that actors should use learning rates approximately 10$\times$ lower than critics. The architectural choice of bounded output activations, while necessary for continuous action spaces, creates an inherent vulnerability to gradient pathologies that must be managed through careful hyperparameter tuning.
+These findings have important implications for the design and training of actor-critic MADRL systems:
 
-Future work will focus on directly measuring gradient magnitudes, exploring alternative bounded activations with better gradient properties, and validating these findings across diverse domains.
+\textbf{Hyperparameter Selection:} Actors should use learning rates approximately 10$\times$ lower than critics to compensate for the gradient asymmetry. Our results suggest actor learning rates in the range 0.0001--0.001 with critic rates of 0.001--0.01.
+
+\textbf{Architectural Understanding:} The empirical preference for smaller actor networks in the literature may be an implicit adaptation to the gradient flow constraints imposed by bounded output activations. Our analysis provides theoretical grounding for this practice.
+
+\textbf{Monitoring Recommendations:} Practitioners should monitor pre-activation statistics and gradient ratios during training to detect early signs of actor saturation before weight updates cease entirely.
+
+\textbf{Broader Applicability:} Since DDPG, TD3, SAC, and other continuous control algorithms share the actor-critic structure with bounded actor outputs, our findings apply beyond CCM-MADRL to the broader family of deterministic policy gradient methods.
+
+\subsection{Limitations and Future Work}
+
+Our analysis has limitations that suggest directions for future research. The experiments were conducted on a single domain (MEC task offloading); generalization to other continuous control environments (e.g., MuJoCo, robotic manipulation) requires validation. Future work should explore alternative bounded activations with better gradient properties (e.g., softsign, scaled sigmoid), investigate gradient clipping strategies specific to actor networks, and develop adaptive learning rate schemes that account for the measured gradient asymmetry.

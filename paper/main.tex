@@ -1,7 +1,17 @@
-\documentclass[conference]{IEEEtran}
-% \documentclass[journal]{IEEEtran}  % Uncomment for journal submission
+% arXiv-compatible format
+\documentclass[11pt,a4paper]{article}
 
-\usepackage{cite}
+% ============================================
+% PDF Accessibility and Searchability Settings
+% ============================================
+\pdfgentounicode=1  % Makes PDF text searchable/copyable
+
+% Page layout for arXiv
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% Standard packages
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{algorithm}
@@ -10,10 +20,36 @@
 \usepackage{xcolor}
 \usepackage{booktabs}
 \usepackage{multirow}
-\usepackage{hyperref}
 \usepackage{subfig}
 \usepackage{listings}
-\usepackage{balance}
+\usepackage{natbib}  % For better bibliography handling
+\usepackage{url}
+\usepackage{authblk}  % For author affiliations
+
+% Accessibility: Figure descriptions for visually impaired readers
+\usepackage{accsupp}  % For accessible PDF support
+
+% Hyperref with accessibility settings (load last among these packages)
+\usepackage[
+    pdftex,
+    pdfauthor={Anonymous},
+    pdftitle={Asymmetric Gradient Flow in Actor-Critic MADRL},
+    pdfsubject={Multi-Agent Reinforcement Learning},
+    pdfkeywords={MADRL, actor-critic, gradient flow, vanishing gradients},
+    pdfproducer={LaTeX with hyperref},
+    pdfcreator={pdflatex},
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+    bookmarks=true,
+    bookmarksopen=true,
+    unicode=true,
+    pdfencoding=auto
+]{hyperref}
+
+% Define \Description command for figure accessibility (ACM style)
+\newcommand{\Description}[1]{\BeginAccSupp{ActualText={#1}}\EndAccSupp{}}
 
 % Code listing style
 \lstset{
@@ -26,36 +62,29 @@
     stringstyle=\color{red},
 }
 
-\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+% arXiv identifier (update when submitting)
+\newcommand{\arxivid}{arXiv:XXXX.XXXXX}
 
 \begin{document}
 
 \title{Asymmetric Gradient Flow and Learning Rate Sensitivity in Client-Master Multi-Agent Actor-Critic Architectures}
 
-\author{
-\IEEEauthorblockN{First Author}
-\IEEEauthorblockA{\textit{Department} \\
-\textit{University}\\
-City, Country \\
-email@example.com}
-\and
-\IEEEauthorblockN{Second Author}
-\IEEEauthorblockA{\textit{Department} \\
-\textit{University}\\
-City, Country \\
-email@example.com}
-}
+\author[1]{First Author}
+\author[2]{Second Author}
+\affil[1]{Department, University, City, Country \\ \texttt{email@example.com}}
+\affil[2]{Department, University, City, Country \\ \texttt{email@example.com}}
+
+\date{\today}
 
 \maketitle
 
 \begin{abstract}
-Multi-agent deep reinforcement learning (MADRL) has emerged as a powerful paradigm for solving complex coordination problems in domains such as mobile edge computing (MEC) task offloading. However, a critical yet underexplored phenomenon in actor-critic MADRL architectures is the asymmetric convergence behavior between actor (policy) networks and critic (value) networks. In this paper, we investigate why client agents (actors) in a Client-Master MADRL framework stop updating their neural network weights at different episode numbers depending on learning rate configurations, while the master agent (critic) continues learning until training completion. Through systematic analysis of gradient flow dynamics, activation function saturation, and reward scale interactions, we identify \textbf{tanh output saturation} as the primary mechanism causing premature actor convergence. We demonstrate that this phenomenon is learning-rate-dependent, with higher learning rates (0.01-0.1) causing actor weight updates to cease within 5 episodes, while lower learning rates (0.0001) maintain gradient flow throughout training. Our analysis provides theoretical and empirical insights into the architectural factors that create gradient flow asymmetry in actor-critic methods, with implications for hyperparameter selection and network design in MADRL systems.
+Actor-critic architectures in multi-agent deep reinforcement learning (MADRL) exhibit asymmetric convergence behavior: actors stop updating weights while critics continue learning. We investigate this phenomenon in Client-Master MADRL for mobile edge computing task offloading, where prior work observed actors freezing within $\sim$5 episodes under high learning rates. Through systematic experiments across 16 learning rate configurations with comprehensive gradient tracking, we identify \textbf{tanh output saturation} as the primary mechanism. High actor learning rates (0.01--0.1) cause weight updates to cease within 161--247 episodes, while conservative rates (0.0001--0.001) maintain gradient flow throughout 2000 episodes. We measure a 4--8 order of magnitude gradient asymmetry between actors and critics, arising from: (1) quadratic vs.\ linear loss functions, (2) indirect vs.\ direct gradient paths, and (3) bounded vs.\ unbounded output activations. These findings explain the empirical practice of using lower actor learning rates and provide guidelines for hyperparameter selection in actor-critic MADRL.
 \end{abstract}
 
-\begin{IEEEkeywords}
-Multi-agent reinforcement learning, Actor-critic methods, Gradient flow, Learning rate sensitivity, Vanishing gradients, Mobile edge computing, MADDPG
-\end{IEEEkeywords}
+\noindent\textbf{Keywords:} Multi-agent reinforcement learning, Actor-critic methods, Gradient flow, Learning rate sensitivity, Vanishing gradients, Mobile edge computing, MADDPG
+
+\vspace{1em}
 
 \input{sections/introduction}
 \input{sections/related_work}
@@ -65,10 +94,10 @@ Multi-agent reinforcement learning, Actor-critic methods, Gradient flow, Learnin
 \input{sections/discussion}
 \input{sections/conclusion}
 
-\section*{Acknowledgment}
+\section*{Acknowledgments}
 % Add acknowledgments here
 
-\bibliographystyle{IEEEtran}
+\bibliographystyle{plainnat}
 \bibliography{references}
 
 \end{document}

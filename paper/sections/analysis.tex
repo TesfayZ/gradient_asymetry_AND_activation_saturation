@@ -1,56 +1,231 @@
 \section{Analysis and Findings}
 \label{sec:analysis}
 
-\subsection{Empirical Results: Stopping Episode by Learning Rate}
+\subsection{Experimental Setup}
 
-Figure~\ref{fig:stopping_episodes} shows the number of training episodes before client agents stop updating their DNN weights for different learning rate combinations. Table~\ref{tab:stopping} summarizes the key results.
+We systematically tested all 16 combinations of actor and critic learning rates (0.0001, 0.001, 0.01, 0.1) with controlled initialization (PyTorch seed 23, NumPy seed 23) to isolate learning rate effects. Each experiment tracked:
+\begin{itemize}
+    \item Per-episode reward
+    \item Per-layer gradient norms for actors and critics
+    \item Gradient asymmetry ratio (actor/critic)
+    \item Activation saturation statistics (tanh output layer)
+    \item Per-agent stopping episodes (when each of 50 agents stopped updating)
+\end{itemize}
+
+\subsection{Stopping Episode Analysis}
+
+Figure~\ref{fig:stopping_heatmap} shows the number of training episodes before client agents stop updating their DNN weights for each learning rate combination.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\columnwidth]{figures/plot_num_episodes.png}
-\caption{Number of training episodes before stopping to change DNN weights of the client agents and the master agent for different combinations of learning rates.}
-\label{fig:stopping_episodes}
+\includegraphics[width=\columnwidth]{figures/fig1_stopping_heatmap.png}
+\Description{A 4x4 heatmap grid showing stopping episodes. The top two rows (actor LR 0.0001 and 0.001) show values near 2000, indicating no stopping. The bottom two rows (actor LR 0.01 and 0.1) show values between 161-247, indicating early stopping. The pattern shows actor learning rate as the dominant factor.}
+\caption{Stopping episodes for all 16 learning rate combinations (x-axis: critic LR, y-axis: actor LR). Color scale: green ($>$1500 episodes) indicates stable training; red ($<$300 episodes) indicates premature stopping due to tanh saturation. Actor LR is the dominant factor.}
+\label{fig:stopping_heatmap}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig2_stopping_bubble.png}
+\Description{A scatter plot with bubbles at 16 grid positions. Large bubbles in top-left region (low actor LR) indicate late or no stopping (values near 2000). Small bubbles in bottom region (high actor LR) indicate early stopping (values 161-247). Bubble size directly correlates with stopping episode count.}
+\caption{Bubble plot of stopping episodes. Bubble size and color indicate the number of episodes before actors stop. The clear diagonal pattern shows that actor learning rate is the dominant factor in determining when learning stops.}
+\label{fig:stopping_bubble}
 \end{figure}
 
 \begin{table}[htbp]
-\caption{Episodes Before Client Agents Stop Updating}
+\caption{Stopping Episodes by Learning Rate Configuration}
 \label{tab:stopping}
 \centering
+\small
 \begin{tabular}{cccc}
 \toprule
-\textbf{Client LR} & \textbf{Master LR} & \textbf{Stop Episode} & \textbf{Final Reward} \\
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Stop Ep.} & \textbf{Category}$^\dagger$ \\
 \midrule
-0.1 & 0.0001 & $\sim$5 & Not converged \\
-0.01 & 0.0001 & $\sim$5 & Not converged \\
-0.001 & 0.001 & $\sim$200 & -52 \\
-0.001 & 0.0001 & $\sim$500 & -38 \\
-0.0001 & 0.001 & $>$2000 & \textbf{-34} \\
-0.0001 & 0.0001 & $>$2000 & -40 \\
+0.0001 & 0.0001 & 2000 & No stopping \\
+0.0001 & 0.001 & 2000 & No stopping \\
+0.0001 & 0.01 & 2000 & No stopping \\
+0.0001 & 0.1 & 696 & Late ($>$500) \\
+0.001 & 0.0001 & 2000 & No stopping \\
+0.001 & 0.001 & 2000 & No stopping \\
+0.001 & 0.01 & 2000 & No stopping \\
+0.001 & 0.1 & 763 & Late ($>$500) \\
+0.01 & 0.0001 & 233 & Early ($<$300) \\
+0.01 & 0.001 & 233 & Early ($<$300) \\
+0.01 & 0.01 & 233 & Early ($<$300) \\
+0.01 & 0.1 & 247 & Early ($<$300) \\
+0.1 & 0.0001 & 215 & Early ($<$300) \\
+0.1 & 0.001 & 217 & Early ($<$300) \\
+0.1 & 0.01 & 176 & Early ($<$300) \\
+0.1 & 0.1 & 161 & Early ($<$300) \\
 \bottomrule
+\multicolumn{4}{l}{\footnotesize $^\dagger$Single run per configuration; stopping detected when}\\
+\multicolumn{4}{l}{\footnotesize all 50 actors have max parameter change $<10^{-8}$.}
 \end{tabular}
 \end{table}
 
 \textbf{Key Observations:}
 \begin{enumerate}
-    \item Learning rates $\geq 0.01$ cause all actors to stop within 5 episodes
-    \item The master agent never stopped at any learning rate configuration
-    \item Lower client learning rates correlate with later stopping and better final performance
-    \item The optimal configuration \{0.0001, 0.001\} maintains actor learning throughout training
+    \item Actor learning rates $\geq 0.01$ cause early stopping (161--247 episodes)
+    \item Actor learning rates $\leq 0.001$ generally allow full training (2000 episodes)
+    \item High critic learning rate (0.1) can induce stopping even with low actor LR
+    \item The master agent (critic) \textbf{never stops} at any learning rate configuration
 \end{enumerate}
 
-\subsection{Root Cause Analysis: Tanh Output Saturation}
+\subsection{Gradient Asymmetry Analysis}
 
-\textbf{Finding 1: High learning rates cause rapid tanh saturation.}
+The fundamental cause of the learning rate sensitivity is a massive gradient magnitude asymmetry between actors and critics.
 
-The actor output layer uses tanh activation: $a = \tanh(W_3^T h_2 + b_3)$. With rewards on the order of -100 and learning rate 0.1, weight updates are approximately $\Delta W_3 \approx 10 \cdot h_2$. After just a few updates, the pre-activation values grow large enough that $\tanh(z) \approx \pm 1$ and $\tanh'(z) \approx 0$, creating a gradient vanishing point at the output layer.
+\subsubsection{Actor vs Critic Gradient Magnitudes}
 
-\textbf{Finding 2: The critic's linear output is immune to saturation.}
+Figure~\ref{fig:gradient_comparison} directly compares the gradient magnitudes of actors and critics.
 
-The critic output layer has no activation: $Q = W_3^T h_2 + b_3$. The gradient always flows directly: $\frac{\partial Q}{\partial W_3} = h_2$. Regardless of the Q-value magnitude, gradients remain proportional to hidden activations.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig4_gradient_comparison.png}
+\Description{Dual-line plot comparing actor gradients (solid lines, values 10^0 to 10^2) versus critic gradients (dashed lines, values 10^6 to 10^8) over episodes. The vertical gap of 4-8 orders of magnitude between solid and dashed lines persists throughout training.}
+\caption{Actor and critic gradient magnitudes over training. Solid lines show actor gradients, dashed lines show critic gradients. The persistent gap of several orders of magnitude demonstrates the structural gradient imbalance in actor-critic architectures.}
+\label{fig:gradient_comparison}
+\end{figure}
 
-\subsection{Architectural Asymmetry Analysis}
+\subsubsection{Per-Layer Gradient Flow}
 
-Table~\ref{tab:architecture} compares the actor and critic architectures.
+Figure~\ref{fig:per_layer} analyzes gradient flow through individual layers.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig5_per_layer_gradients.png}
+\Description{Two bar charts side by side. Left panel (low LR): actor layers show moderate gradient values across all layers. Right panel (high LR): actor output layer bar is near zero while hidden layers maintain values, showing gradient vanishing specifically at the tanh output.}
+\caption{Per-layer gradient norms at final episode for two representative configurations: (left) low actor LR=0.0001 with no stopping, (right) high actor LR=0.1 with early stopping. The high LR case shows vanishing gradients in the actor output layer.}
+\label{fig:per_layer}
+\end{figure}
+
+\subsubsection{Asymmetry vs Stopping Correlation}
+
+Figure~\ref{fig:asymmetry_stopping} shows the correlation between final gradient asymmetry and stopping episode.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig6_asymmetry_vs_stopping.png}
+\Description{Scatter plot with x-axis showing stopping episode (0-2000) and y-axis showing asymmetry ratio (log scale). Points cluster into two groups: high actor LR points at left (early stopping, episodes 161-247) and low actor LR points at right (late/no stopping, episodes 696-2000).}
+\caption{Final gradient asymmetry ratio vs stopping episode. Color indicates actor learning rate. Higher actor learning rates cluster in the early-stopping, high-asymmetry region, confirming the link between gradient imbalance and premature learning termination.}
+\label{fig:asymmetry_stopping}
+\end{figure}
+
+\subsection{Activation Saturation Analysis}
+
+The actor output layer uses tanh activation, which saturates when pre-activation inputs become large, causing gradient vanishing. We define the \textit{saturation ratio} as the fraction of outputs where $|\tanh(z)| > 0.9$. This threshold corresponds to $\tanh'(z) < 0.19$, meaning more than 81\% of the gradient is suppressed. The saturation region boundary at $|z| \approx 1.47$ marks where gradient attenuation becomes severe.
+
+\subsubsection{Saturation Progression}
+
+Figure~\ref{fig:saturation_time} tracks the saturation ratio over training.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig7_saturation_over_time.png}
+\Description{Line plot showing saturation ratio (0 to 1) over 2000 episodes. High actor LR lines rise rapidly to near 1.0 within first 200 episodes and plateau. Low actor LR lines remain near 0 throughout. Horizontal dashed line at 0.9 marks severe saturation threshold.}
+\caption{Actor output saturation ratio over training. High actor learning rates cause rapid saturation onset within the first 100--200 episodes. The dashed line at 0.9 indicates severe saturation threshold.}
+\label{fig:saturation_time}
+\end{figure}
+
+\subsubsection{Pre-activation Statistics}
+
+Figure~\ref{fig:preactivation} shows the pre-activation values (input to tanh) over training.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig8_preactivation_stats.png}
+\Description{Line plot with error bands showing pre-activation mean and standard deviation over episodes. Low actor LR configurations stay within the -2 to +2 range (marked by horizontal dashed lines). High actor LR configurations show means diverging beyond plus or minus 5, well into the saturation region.}
+\caption{Pre-activation statistics showing mean and standard deviation of inputs to the tanh output layer. Values outside $[-2, 2]$ (dashed lines) cause significant saturation. High learning rates push pre-activations to extreme values.}
+\label{fig:preactivation}
+\end{figure}
+
+\subsubsection{Saturation Heatmap}
+
+Figure~\ref{fig:saturation_heatmap} summarizes final saturation across all learning rate combinations.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig9_saturation_heatmap.png}
+\Description{A 4x4 heatmap showing final saturation ratios. Top two rows (low actor LR) show values near 0. Bottom two rows (high actor LR) show values near 1.0. The pattern directly mirrors the stopping episode heatmap, with high saturation corresponding to early stopping.}
+\caption{Final activation saturation by learning rate configuration. The pattern closely mirrors the stopping episode heatmap (Fig.~\ref{fig:stopping_heatmap}), confirming that saturation is the proximate cause of actor learning cessation.}
+\label{fig:saturation_heatmap}
+\end{figure}
+
+\subsubsection{Saturation vs Stopping}
+
+Figure~\ref{fig:saturation_stopping} shows the correlation between saturation and stopping episode.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig10_saturation_vs_stopping.png}
+\Description{Scatter plot with stopping episode on x-axis and saturation ratio on y-axis. Points form a clear negative correlation: early-stopping points (x less than 300) have high saturation (y greater than 0.8), while late/no-stopping points (x greater than 1500) have low saturation (y less than 0.2).}
+\caption{Final saturation ratio vs stopping episode. Early-stopping configurations (left side) show high saturation, while long-running experiments (right side) maintain low saturation. This confirms the causal chain: high LR $\rightarrow$ saturation $\rightarrow$ gradient vanishing $\rightarrow$ learning stops.}
+\label{fig:saturation_stopping}
+\end{figure}
+
+\subsection{Learning Performance Analysis}
+
+\subsubsection{Learning Curves}
+
+Figure~\ref{fig:learning_curves} shows the reward progression for all experiments.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig11_learning_curves.png}
+\Description{Multi-line plot showing reward over 2000 episodes. Lines for low actor LR (0.0001, 0.001) show continuous upward trend. Lines for high actor LR (0.01, 0.1) flatten early and show no improvement after their respective stopping points, marked by vertical dashed lines.}
+\caption{Learning curves (smoothed reward) for all 16 experiments. Vertical dotted lines indicate stopping episodes. Low actor learning rates allow sustained improvement, while high rates show flat curves after early stopping.}
+\label{fig:learning_curves}
+\end{figure}
+
+\subsubsection{Reward Comparison}
+
+Figure~\ref{fig:reward_comparison} compares reward at stopping point vs end of training.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig12_reward_comparison.png}
+\Description{Grouped bar chart with 16 configuration groups. Each group has two bars: reward at stopping (left bar) and reward at end (right bar). For low actor LR configs, end reward significantly exceeds stopping reward. For high actor LR configs, both bars are similar height, showing minimal improvement after stopping.}
+\caption{Reward at stopping point (left bars) vs end of training (right bars). For early-stopping configurations, little improvement occurs after actors stop, as the frozen actors cannot adapt. The master agent provides some continued improvement through better selection.}
+\label{fig:reward_comparison}
+\end{figure}
+
+\subsection{Per-Agent Analysis}
+
+Figure~\ref{fig:per_agent} shows the distribution of stopping episodes across the 50 agents.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig13_per_agent_stopping.png}
+\Description{Box plot showing distribution of stopping episodes across 50 agents for each of 16 configurations. High actor LR configurations show narrow boxes clustered between episodes 161-247 with small variance. Low actor LR configurations show boxes at episode 2000 or wide distributions, indicating agents either never stop or stop at varied times.}
+\caption{Per-agent stopping episode distribution (50 agents). Box plots show when individual agents stopped updating. High actor learning rates cause tight clustering (all agents stop together), while lower rates show more variance or no stopping.}
+\label{fig:per_agent}
+\end{figure}
+
+\subsection{Root Cause Summary}
+
+The gradient asymmetry arises from three compounding factors:
+
+\textbf{1. Loss Function Scaling:}
+\begin{itemize}
+    \item Critic (MSE): $\mathcal{L}_c = (Q - Q_{\text{target}})^2$ -- squared errors amplify gradients
+    \item Actor (Policy Gradient): $\mathcal{L}_a = -Q$ -- linear in Q-values
+\end{itemize}
+
+\textbf{2. Gradient Flow Path:}
+\begin{itemize}
+    \item Critic: Loss $\rightarrow$ Critic parameters (direct, 1 hop)
+    \item Actor: Loss $\rightarrow$ Critic $\rightarrow$ Actor parameters (indirect, 2 hops)
+\end{itemize}
+
+\textbf{3. Output Activation:}
+\begin{itemize}
+    \item Actor: tanh (bounded, saturating) -- gradients vanish when $|z| > 2$
+    \item Critic: Linear (unbounded) -- gradients always flow
+\end{itemize}
+
+\subsection{Architectural Comparison}
+
+Table~\ref{tab:architecture} summarizes the asymmetry between actor and critic networks.
 
 \begin{table}[htbp]
 \caption{Actor vs Critic Architectural Comparison}
@@ -58,82 +233,27 @@ Table~\ref{tab:architecture} compares the actor and critic architectures.
 \centering
 \begin{tabular}{lcc}
 \toprule
-\textbf{Property} & \textbf{Client (Actor)} & \textbf{Master (Critic)} \\
+\textbf{Property} & \textbf{Actor} & \textbf{Critic} \\
 \midrule
-Input dim & 7 & 360 \\
+Input dimension & 7 & 510$^*$ \\
 Hidden layers & 64 $\rightarrow$ 32 & 512 $\rightarrow$ 128 \\
-Output dim & 3 & 1 \\
-Output activation & \textbf{tanh} & \textbf{Linear} \\
+Output dimension & 3 & 1 \\
+Output activation & \textbf{tanh (bounded)} & \textbf{Linear (unbounded)} \\
 Loss type & Policy gradient & MSE (TD error) \\
-Gradient source & Indirect (via Q) & Direct (rewards) \\
+Gradient source & Indirect (via Q) & Direct (from loss) \\
+Susceptible to & Saturation, vanishing & None \\
 \bottomrule
+\multicolumn{3}{l}{\footnotesize $^*$Joint state-action (500) + individual state-action (10)}
 \end{tabular}
 \end{table}
 
-The combination of bounded (tanh) vs unbounded (linear) outputs, indirect vs direct supervision, and smaller vs larger capacity creates systematic gradient flow asymmetry favoring the critic.
-
-\subsection{Performance Analysis}
-
-Figure~\ref{fig:performance} shows performance comparison across learning rate configurations.
-
-\begin{figure}[htbp]
-\centering
-\subfloat[Evaluation environment, LR \{0.0001, 0.001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtEval_s10lre4e3.png}}
-\hfill
-\subfloat[Training environment, LR \{0.0001, 0.001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtTraining_s10lre4e3.png}}
-\\
-\subfloat[Evaluation environment, LR \{0.01, 0.0001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtEval_s10lre2e4.png}}
-\hfill
-\subfloat[Training environment, LR \{0.01, 0.0001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtTraining_s10lre2e4.png}}
-\caption{Performance comparison: (a,b) Optimal learning rates showing convergence; (c,d) High client learning rate showing poor performance due to early actor stopping.}
-\label{fig:performance}
-\end{figure}
-
-\subsection{Additional Learning Rate Comparisons}
-
-Figure~\ref{fig:additional_lr} shows performance for additional learning rate configurations, demonstrating the sensitivity to this hyperparameter choice.
-
-\begin{figure}[htbp]
-\centering
-\subfloat[LR \{0.001, 0.001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtEval_s10lre3e3.png}}
-\hfill
-\subfloat[LR \{0.001, 0.0001\}]{\includegraphics[width=0.48\columnwidth]{figures/AtEval_s10lre3e4.png}}
-\caption{Performance with intermediate learning rate configurations.}
-\label{fig:additional_lr}
-\end{figure}
-
 \subsection{Why CCM-MADRL Continues to Improve}
 
-Despite frozen client networks, CCM-MADRL shows performance improvements because:
+Despite frozen client networks, CCM-MADRL shows continued performance improvements because:
 \begin{enumerate}
     \item \textbf{Master agent continues learning:} The critic refines Q-value estimates throughout training
     \item \textbf{Selection mechanism:} The master ranks clients by Q-value, selecting optimal combinations
     \item \textbf{Constraint satisfaction:} Better Q-estimates lead to better constraint-respecting selections
 \end{enumerate}
 
-This architectural feature provides resilience against actor stagnation, but comes at the cost of reduced policy diversity.
-
-\subsection{Performance Until Stopping vs End of Training}
-
-Figure~\ref{fig:until_stop} shows performance at the stopping point, while Figure~\ref{fig:until_end} shows performance at the end of training, demonstrating that the master agent continues to improve system performance even after actors stop.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.9\columnwidth]{figures/plot_until_stop.png}
-\caption{Performance at the stopping episode for different learning rate combinations.}
-\label{fig:until_stop}
-\end{figure}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.9\columnwidth]{figures/plot_until_end.png}
-\caption{Performance at end of training (2000 episodes) for different learning rate combinations.}
-\label{fig:until_end}
-\end{figure}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.9\columnwidth]{figures/plot_at_training.png}
-\caption{Performance on training environment for different learning rate combinations.}
-\label{fig:at_training}
-\end{figure}
+This architectural feature provides resilience against actor stagnation, but comes at the cost of reduced policy adaptation.

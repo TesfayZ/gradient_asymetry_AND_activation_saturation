@@ -42,12 +42,7 @@ where $y_j = r_j + \gamma \max_{a'} Q_{\phi'}(s'_j, a'_j, s'_{i,j}, a'_{i,j})$.
 
 \subsection{Problem Definition}
 
-\textbf{Phenomenon:} Given identical initialization and exploration sequences, client agents stop updating weights at episode $E_\text{stop}$ where:
-\begin{itemize}
-    \item $E_\text{stop} \approx 5$ for $\eta_a \in \{0.01, 0.1\}$
-    \item $E_\text{stop} > 2000$ for $\eta_a = 0.0001$
-    \item The master agent never stops ($E_\text{stop}^{\text{master}} = \infty$ for all $\eta_c$)
-\end{itemize}
+\textbf{Motivating Observation:} In prior work~\cite{gebrekidan2024thesis}, we observed that client agents stopped updating weights within $\sim$5 episodes under high learning rate configurations, while the master agent continued learning indefinitely. This phenomenon motivated a systematic investigation into the underlying mechanism.
 
 \textbf{Research Questions:}
 \begin{enumerate}
@@ -56,3 +51,5 @@ where $y_j = r_j + \gamma \max_{a'} Q_{\phi'}(s'_j, a'_j, s'_{i,j}, a'_{i,j})$.
     \item What architectural factors create this asymmetry?
     \item How can premature actor stopping be prevented?
 \end{enumerate}
+
+\textbf{Hypothesis:} We hypothesize that the gradient flow asymmetry arises from the interaction between (1) the bounded tanh output activation in actor networks, (2) the unbounded linear output in critic networks, and (3) the multiplicative effect of learning rate and reward scale on weight updates.

@@ -1,9 +1,11 @@
 \section{Methodology}
 \label{sec:methodology}
 
+To investigate the gradient asymmetry phenomenon, we design experiments that systematically vary learning rates while tracking gradient flow, activation saturation, and weight update patterns. Our methodology builds on the theoretical framework established in Section~\ref{sec:related}, operationalizing the concepts of gradient path length, activation saturation, and loss function asymmetry into measurable quantities.
+
 \subsection{Experimental Setup}
 
-Table~\ref{tab:exp_params} summarizes the experimental configuration used throughout our analysis.
+Table~\ref{tab:exp_params} summarizes the experimental configuration. The architecture follows the CCM-MADRL design~\cite{ccm_madrl}, with actors using a 7$\rightarrow$64$\rightarrow$32$\rightarrow$3 configuration (tanh output) and the critic using 510$\rightarrow$512$\rightarrow$128$\rightarrow$1 (linear output). This 1:8 actor-to-critic size ratio is consistent with MARL architectures discussed in Section~\ref{sec:related}.
 
 \begin{table}[htbp]
 \caption{Experimental Configuration}
@@ -17,19 +19,49 @@ Number of agents & 50 \\
 State dimension & 7 \\
 Action dimension & 3 \\
 Episodes & 2000 \\
-Steps per episode & 10 / 100 \\
+Steps per episode & 100 \\
 Batch size & 64 \\
 Replay memory & 10,000 \\
 Discount factor ($\gamma$) & 0.99 \\
 Target network update ($\tau$) & 1.0 (hard update) \\
 Exploration ($\epsilon$) & 1.0 $\rightarrow$ 0.01 (decay) \\
+Hardware & GPU (Google Colab) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Learning Rate Configurations:} We tested 16 combinations of client learning rates $\eta_a \in \{0.1, 0.01, 0.001, 0.0001\}$ and master learning rates $\eta_c \in \{0.1, 0.01, 0.001, 0.0001\}$.
+\textbf{Learning Rate Configurations:} We tested all 16 combinations of actor learning rates $\eta_a \in \{0.0001, 0.001, 0.01, 0.1\}$ and critic learning rates $\eta_c \in \{0.0001, 0.001, 0.01, 0.1\}$.
 
-\textbf{Controlled Variables:} To isolate the effect of learning rates, we fixed PyTorch seed (23) for identical weight initialization, NumPy seed (23) for identical exploration sequence, and environment seed (37) for identical state transitions.
+\textbf{Controlled Variables:} To isolate learning rate effects, we fixed: PyTorch seed (23) for weight initialization, NumPy seed (23) for exploration sequences, and environment seed (37) for state transitions.
+
+\textbf{Hardware and Runtime:} Experiments were conducted on Google Colab using NVIDIA Tesla T4 GPUs. Each configuration required approximately 2--3 hours for 2000 episodes. Total experimental runtime was approximately 40 GPU-hours.
+
+\textbf{Reproducibility:} Code and experimental logs are available at \url{https://github.com/[anonymized]}. We note that results are from single runs per configuration; future work should include multiple seeds for statistical significance testing.
+
+\subsection{Comprehensive Gradient and Saturation Tracking}
+
+Building on our prior empirical observations~\cite{ccm_madrl, gebrekidan2024thesis}, we implemented comprehensive tracking to identify the \textit{mechanism} behind actor stopping:
+
+\textbf{Gradient Tracking:}
+\begin{itemize}
+    \item Per-episode gradient norms for all actor and critic networks
+    \item Gradient asymmetry ratio: $\rho = \|\nabla_{\theta_a}\| / \|\nabla_{\theta_c}\|$
+    \item Layer-wise gradient magnitude breakdown
+\end{itemize}
+
+\textbf{Activation Saturation Tracking:}
+\begin{itemize}
+    \item Output layer pre-activation values (tanh inputs)
+    \item Saturation ratio: fraction of outputs where $|\tanh(z)| > 0.9$
+    \item Per-layer activation statistics for hidden layers
+\end{itemize}
+
+\textbf{Weight Update Monitoring:}
+\begin{itemize}
+    \item Episode-level weight change detection for all agents
+    \item First stopping episode per learning rate configuration
+    \item Correlation between saturation onset and weight freezing
+\end{itemize}
 
 \subsection{Weight Update Detection}
 
@@ -45,6 +77,53 @@ def check_parameter_difference(model, checkpoint):
 \end{lstlisting}
 
 The stopping episode is recorded as the first episode where all actors simultaneously cease weight updates.
+
+\subsection{Theoretical Framework: Sources of Gradient Asymmetry}
+
+We identify three fundamental sources of gradient asymmetry between actors and critics, each contributing to the differential learning dynamics we observe.
+
+\subsubsection{Loss Function Asymmetry}
+
+The first source lies in the different loss functions used for actor and critic training.
+
+\textbf{Critic Loss (Mean Squared Error):}
+\begin{equation}
+\mathcal{L}_{\text{critic}} = \frac{1}{N} \sum_{i=1}^{N} (Q(s_i, a_i) - y_i)^2
+\label{eq:critic_loss}
+\end{equation}
+where $y_i = r_i + \gamma \max_{a'} Q'(s'_i, a')$ is the TD target.
+
+\textbf{Actor Loss (Policy Gradient):}
+\begin{equation}
+\mathcal{L}_{\text{actor}} = -\frac{1}{N} \sum_{i=1}^{N} Q(s_i, \pi(s_i))
+\label{eq:actor_loss}
+\end{equation}
+
+The critic loss is \textbf{quadratic} in the TD error while the actor loss is \textbf{linear} in Q-values. This fundamental difference means:
+\begin{itemize}
+    \item Critic gradient: $\nabla_{\theta_c} \mathcal{L}_c \propto 2(Q - y)$ -- amplified by TD error magnitude
+    \item Actor gradient: $\nabla_{\theta_a} \mathcal{L}_a \propto \nabla_a Q \cdot \nabla_{\theta_a} \pi$ -- attenuated by chain rule
+\end{itemize}
+
+With Q-values on the order of $10^2$--$10^4$ and TD errors potentially large during early training, the critic receives gradient signals substantially larger than the actor.
+
+\subsubsection{Gradient Path Length Asymmetry}
+
+The second source is the difference in gradient path length. The critic gradient flows directly from the loss to parameters:
+\begin{equation}
+\nabla_{\theta_c} \mathcal{L}_c = \frac{\partial \mathcal{L}_c}{\partial Q} \cdot \frac{\partial Q}{\partial \theta_c}
+\end{equation}
+
+In contrast, the actor gradient must pass through the critic network:
+\begin{equation}
+\nabla_{\theta_a} \mathcal{L}_a = \frac{\partial \mathcal{L}_a}{\partial Q} \cdot \frac{\partial Q}{\partial a} \cdot \frac{\partial a}{\partial \theta_a}
+\end{equation}
+
+This additional multiplication by $\frac{\partial Q}{\partial a}$ introduces an extra attenuation factor, as noted in the deterministic policy gradient theorem~\cite{silver2014deterministic}.
+
+\subsubsection{Output Activation Asymmetry}
+
+The third and most critical source is the difference in output activations. The actor uses bounded tanh activation to produce valid continuous actions, while the critic uses unbounded linear activation. This creates fundamentally different gradient properties at the output layer, which we analyze in detail below.
 
 \subsection{Gradient Flow Analysis}
 
