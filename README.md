@@ -95,12 +95,14 @@ Tracks when actor gradients vanish across different learning rate configurations
 
 ### Mitigation Strategies Under Investigation
 
-| Experiment | Hypothesis | Status |
+| Experiment | Hypothesis | Result |
 |------------|-----------|--------|
-| **Large Actor** | More parameters → more gradient paths | In progress |
+| **Large Actor** | More parameters → distribute learning signal | Marginal improvement (5-28 episodes delay) |
 | **LayerNorm** | Normalize pre-activations → prevent saturation | In progress |
-| **Linear Activations** | Remove ReLU → allow negative flow | In progress |
+| **Linear Activations** | Remove ReLU → allow negative flow | **Failed** - pre-activation explosion 17× worse |
 | **Full Normalization** | LayerNorm on all layers | In progress |
+
+*Note: Linear activations delayed stopping slightly but caused pre-activations to explode to ±18 million (vs ±1 million with ReLU), confirming the problem is at the tanh output layer, not hidden layers.*
 
 ## Quick Start
 
