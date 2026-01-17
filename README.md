@@ -180,7 +180,7 @@ This research builds on the CCM-MADRL algorithm:
   title={Client-Master Multiagent Deep Reinforcement Learning
          for Task Offloading in Mobile Edge Computing},
   author={Gebrekidan, Tesfay Zemuy and Stein, Sebastian and
-          Timothy, Norman},
+          Norman, Timothy J.},
   journal={ACM Transactions on Autonomous and Adaptive Systems},
   year={2025},
   doi={10.1145/3768579}
