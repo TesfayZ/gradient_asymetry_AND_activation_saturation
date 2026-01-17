@@ -14,6 +14,8 @@ During PhD research on the [CCM-MADRL algorithm](https://doi.org/10.1145/3768579
 
 *Figure: Stopping episodes across learning rate configurations. Each cell shows when actors stopped updating (darker = earlier stopping). Only specific learning rate combinations (bottom-left) allowed training to complete.*
 
+**Only 1 out of 16 learning rate combinations converged.** This means 93.75% of hyperparameter configurations failed—not due to suboptimal learning, but because actors stopped updating entirely. Preventing activation saturation would make many more combinations viable, dramatically reducing hyperparameter search costs and saving compute resources.
+
 This observation motivated a deeper investigation into **why** this happens and **how** to prevent it.
 
 ## Overview

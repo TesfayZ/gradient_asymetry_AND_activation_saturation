@@ -67,6 +67,8 @@ All 15 other configurations exhibited either:
 
 This statistical validation confirms that the gradient asymmetry creates an extremely narrow region of viable hyperparameters, making MADDPG-style algorithms fragile in practice without the mitigation strategies discussed below.
 
+\textbf{Implications for Hyperparameter Search:} The fact that only 1 out of 16 (6.25\%) learning rate combinations converged represents a significant practical barrier. In the thesis experiments, 93.75\% of hyperparameter configurations failed---not due to suboptimal learning dynamics, but because actors stopped updating entirely due to activation saturation. This has profound implications for computational costs: exhaustive hyperparameter search wastes resources on configurations that are fundamentally incapable of learning. \textit{Preventing activation saturation would transform many of these failed configurations into viable candidates}, dramatically reducing hyperparameter search costs and making actor-critic algorithms more accessible to practitioners with limited computational budgets.
+
 \subsection{Practical Recommendations}
 
 Based on our analysis, we recommend:
