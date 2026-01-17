@@ -1,0 +1,13 @@
+{
+  "completed": [
+    "large_actor_0.1_critic_0.1_run_0",
+    "large_actor_0.1_critic_0.01_run_0",
+    "large_actor_0.1_critic_0.001_run_0",
+    "large_actor_0.1_critic_0.0001_run_0",
+    "large_actor_0.01_critic_0.1_run_0",
+    "large_actor_0.01_critic_0.01_run_0",
+    "large_actor_0.01_critic_0.001_run_0",
+    "large_actor_0.01_critic_0.0001_run_0"
+  ],
+  "in_progress": "large_actor_0.001_critic_0.1_run_0"
+}

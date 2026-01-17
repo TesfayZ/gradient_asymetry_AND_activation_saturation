@@ -113,7 +113,7 @@ Figure~\ref{fig:asymmetry_stopping} shows the correlation between final gradient
 
 \subsection{Activation Saturation Analysis}
 
-The actor output layer uses tanh activation, which saturates when pre-activation inputs become large, causing gradient vanishing. We define the \textit{saturation ratio} as the fraction of outputs where $|\tanh(z)| > 0.9$. This threshold corresponds to $\tanh'(z) < 0.19$, meaning more than 81\% of the gradient is suppressed. The saturation region boundary at $|z| \approx 1.47$ marks where gradient attenuation becomes severe.
+The actor output layer uses tanh activation, which saturates when pre-activation inputs become large, causing gradient vanishing. We define the \textit{saturation ratio} as the fraction of actor outputs across all 3 action dimensions and all 50 agents where $|\tanh(z)| > 0.9$. This threshold corresponds to $\tanh'(z) < 0.19$, meaning more than 81\% of the gradient is suppressed. The saturation region boundary at $|z| \approx 1.47$ marks where gradient attenuation becomes severe.
 
 \subsubsection{Saturation Progression}
 
@@ -138,6 +138,41 @@ Figure~\ref{fig:preactivation} shows the pre-activation values (input to tanh) o
 \caption{Pre-activation statistics showing mean and standard deviation of inputs to the tanh output layer. Values outside $[-2, 2]$ (dashed lines) cause significant saturation. High learning rates push pre-activations to extreme values.}
 \label{fig:preactivation}
 \end{figure}
+
+\subsubsection{Saturation Direction and Magnitude}
+
+A critical question is whether the observed saturation represents \textit{legitimate convergence} to optimal actions (which might naturally be at $\pm 1$) or \textit{pathological saturation} where the network becomes unresponsive to gradients. Our analysis confirms the latter.
+
+\textbf{Bidirectional Saturation:} The saturation occurs to \textit{both} boundaries simultaneously. Across all high-LR experiments, we observe:
+\begin{itemize}
+    \item Minimum output: $-1.0000$ (saturated negative)
+    \item Maximum output: $+1.0000$ (saturated positive)
+    \item Mean output: $\approx 0$ (ranging from $-0.07$ to $+0.06$)
+\end{itemize}
+This indicates that approximately half of the 150 outputs (50 agents $\times$ 3 actions) are saturated at $+1$ and half at $-1$, rather than converging to specific optimal values.
+
+\textbf{Pre-activation Magnitude:} The definitive evidence comes from examining the pre-activation values before the tanh function. For legitimate convergence, pre-activations would remain in a reasonable range (e.g., $|z| < 3$). Instead, we observe catastrophic explosion:
+
+\begin{table}[htbp]
+\caption{Pre-activation Magnitudes by Actor Learning Rate}
+\label{tab:preactivation}
+\centering
+\small
+\begin{tabular}{ccc}
+\toprule
+\textbf{Actor LR} & \textbf{Pre-activation Range} & \textbf{Gradient Flow} \\
+\midrule
+0.1 & $-1,068,000$ to $+1,070,000$ & $\approx 0$ \\
+0.01 & $-5,200$ to $+5,100$ & $\approx 0$ \\
+0.001 & $-50$ to $+50$ & $< 1\%$ \\
+0.0001 & $-3$ to $+3$ & Normal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For context, $\tanh(3) \approx 0.995$ with gradient $\tanh'(3) \approx 0.01$ (1\% flow), $\tanh(5) \approx 0.99991$ with gradient $\approx 0.00018$ (0.02\% flow), and $\tanh(10^6) = 1.0$ exactly with gradient $\approx 0$ (no flow). The pre-activation values in high-LR experiments are so extreme that gradients are computationally zero, rendering the network completely untrainable.
+
+This analysis conclusively demonstrates that the observed saturation is \textit{not} the network converging to optimal actions that happen to be at the boundaries, but rather a pathological state where pre-activations have exploded to extreme values and the network is frozen.
 
 \subsubsection{Saturation Heatmap}
 

@@ -311,7 +311,7 @@ class StoppingExperimentAgent:
                         whole_actions = actor_action_var.view(-1)
 
                         critic_action_Qs = np.full(self.n_agents, -np.inf)
-                        offload_indices = np.where(actor_action[:, 0] > 0)[0]
+                        offload_indices = np.where(actor_action[:, 0] >= 0)[0]
 
                         if len(offload_indices) > 0:
                             n_off = len(offload_indices)

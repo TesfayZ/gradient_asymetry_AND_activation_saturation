@@ -1,0 +1,1488 @@
+{
+  "gradient_history": [
+    {
+      "episode": 10,
+      "actor_grad": 3.5817924610326126,
+      "critic_grad": 14283888098.64295,
+      "actor_per_layer": {
+        "fc1": 0.02126086516256047,
+        "fc2": 0.1836011542724127,
+        "fc3": 3.577020523518482
+      },
+      "critic_per_layer": {
+        "fc1": 463285137.1898433,
+        "fc2": 616220224.1013478,
+        "fc3": 14263067648.006905
+      }
+    },
+    {
+      "episode": 20,
+      "actor_grad": 0.006558243463592125,
+      "critic_grad": 21505422545.611973,
+      "actor_per_layer": {
+        "fc1": 4.0123098491955757e-05,
+        "fc2": 0.0003472947402899561,
+        "fc3": 0.006548918523548997
+      },
+      "critic_per_layer": {
+        "fc1": 1110732584.0104475,
+        "fc2": 1037286144.1710815,
+        "fc3": 21451655168.010784
+      }
+    },
+    {
+      "episode": 30,
+      "actor_grad": 0.0,
+      "critic_grad": 4682596548.635432,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 392133806.0235469,
+        "fc2": 283161952.03007,
+        "fc3": 4657548800.000754
+      }
+    },
+    {
+      "episode": 40,
+      "actor_grad": 0.0,
+      "critic_grad": 9248570385.827467,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 795306332.8851503,
+        "fc2": 418624064.0654397,
+        "fc3": 9204797440.001759
+      }
+    },
+    {
+      "episode": 50,
+      "actor_grad": 0.0,
+      "critic_grad": 2425966098.5067024,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 163581685.3141121,
+        "fc2": 120078328.01196745,
+        "fc3": 2417464320.0004992
+      }
+    },
+    {
+      "episode": 60,
+      "actor_grad": 0.0,
+      "critic_grad": 1337264488.9828613,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 83081337.46737479,
+        "fc2": 58677020.005073585,
+        "fc3": 1333390720.0001616
+      }
+    },
+    {
+      "episode": 70,
+      "actor_grad": 0.0,
+      "critic_grad": 6736131221.516474,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 405036845.63519484,
+        "fc2": 560389824.041509,
+        "fc3": 6700550144.001434
+      }
+    },
+    {
+      "episode": 80,
+      "actor_grad": 0.0,
+      "critic_grad": 1839626008.1463158,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 121067460.31248233,
+        "fc2": 240897648.0358291,
+        "fc3": 1819762304.0036411
+      }
+    },
+    {
+      "episode": 90,
+      "actor_grad": 0.0,
+      "critic_grad": 1755656172.5997562,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 95398131.47169296,
+        "fc2": 100830904.0329419,
+        "fc3": 1750160256.0026422
+      }
+    },
+    {
+      "episode": 100,
+      "actor_grad": 0.0,
+      "critic_grad": 306660263.4552873,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 18391790.653341945,
+        "fc2": 14574508.007785978,
+        "fc3": 305761088.000682
+      }
+    },
+    {
+      "episode": 110,
+      "actor_grad": 0.0,
+      "critic_grad": 510370501.29688746,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 29937055.103264492,
+        "fc2": 21057522.014119707,
+        "fc3": 509056384.0012275
+      }
+    },
+    {
+      "episode": 120,
+      "actor_grad": 0.0,
+      "critic_grad": 7196375.893206609,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 1896946.750095249,
+        "fc2": 287738.50000547874,
+        "fc3": 6935894.000000496
+      }
+    },
+    {
+      "episode": 130,
+      "actor_grad": 0.0,
+      "critic_grad": 10244002.628009686,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 1306485.4020150017,
+        "fc2": 528695.4381686707,
+        "fc3": 10146584.000078583
+      }
+    },
+    {
+      "episode": 140,
+      "actor_grad": 0.0,
+      "critic_grad": 113424245.97123066,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 6958318.221304529,
+        "fc2": 4828833.503372308,
+        "fc3": 113107576.00032812
+      }
+    },
+    {
+      "episode": 150,
+      "actor_grad": 0.0,
+      "critic_grad": 115858372.52454865,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 6927701.267776543,
+        "fc2": 4903803.504551727,
+        "fc3": 115547056.00044635
+      }
+    },
+    {
+      "episode": 160,
+      "actor_grad": 0.0,
+      "critic_grad": 227056833.73302087,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 12897265.496091818,
+        "fc2": 9717777.008694984,
+        "fc3": 226481856.00086662
+      }
+    },
+    {
+      "episode": 170,
+      "actor_grad": 0.0,
+      "critic_grad": 58072984.66083946,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 3181568.851408503,
+        "fc2": 2453058.5017688232,
+        "fc3": 57933856.00017266
+      }
+    },
+    {
+      "episode": 180,
+      "actor_grad": 0.0,
+      "critic_grad": 23908512.046026517,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 1225555.2879170668,
+        "fc2": 965936.8131805836,
+        "fc3": 23857534.000063714
+      }
+    },
+    {
+      "episode": 190,
+      "actor_grad": 0.0,
+      "critic_grad": 116494581.97408842,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 7408096.793371427,
+        "fc2": 5462750.505668879,
+        "fc3": 116130384.0006157
+      }
+    },
+    {
+      "episode": 200,
+      "actor_grad": 0.0,
+      "critic_grad": 93467290.91942827,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 5479587.681236166,
+        "fc2": 4161006.7532008267,
+        "fc3": 93213704.00032659
+      }
+    },
+    {
+      "episode": 210,
+      "actor_grad": 0.0,
+      "critic_grad": 10967896.697384968,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 1662006.1733602737,
+        "fc2": 574570.1270172496,
+        "fc3": 10826004.000246804
+      }
+    },
+    {
+      "episode": 220,
+      "actor_grad": 0.0,
+      "critic_grad": 57312075.49207675,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 2979695.1093717376,
+        "fc2": 2496771.001926871,
+        "fc3": 57180080.00019436
+      }
+    },
+    {
+      "episode": 230,
+      "actor_grad": 0.0,
+      "critic_grad": 31026990.623615965,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 2058567.70292954,
+        "fc2": 1443662.3765271874,
+        "fc3": 30924946.000163175
+      }
+    },
+    {
+      "episode": 240,
+      "actor_grad": 0.0,
+      "critic_grad": 55255641.22255876,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 3255942.5398046956,
+        "fc2": 2332853.250745231,
+        "fc3": 55110276.000072
+      }
+    },
+    {
+      "episode": 250,
+      "actor_grad": 0.0,
+      "critic_grad": 70975782.50722364,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 4348454.667434786,
+        "fc2": 3240163.7529158406,
+        "fc3": 70768312.00030327
+      }
+    },
+    {
+      "episode": 260,
+      "actor_grad": 0.0,
+      "critic_grad": 16989772.007334612,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 1290111.7945970083,
+        "fc2": 787661.3134754462,
+        "fc3": 16922398.00010349
+      }
+    },
+    {
+      "episode": 270,
+      "actor_grad": 0.0,
+      "critic_grad": 53627868.52749439,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 3094536.6140796584,
+        "fc2": 2408599.501934578,
+        "fc3": 53484304.000198275
+      }
+    },
+    {
+      "episode": 280,
+      "actor_grad": 0.0,
+      "critic_grad": 26254920.672784016,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 1863804.9388506908,
+        "fc2": 1289915.6261492139,
+        "fc3": 26156896.000128023
+      }
+    },
+    {
+      "episode": 290,
+      "actor_grad": 0.0,
+      "critic_grad": 10649704.049458707,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 742022.6474811307,
+        "fc2": 512072.53176199226,
+        "fc3": 10611474.000057537
+      }
+    },
+    {
+      "episode": 300,
+      "actor_grad": 0.0,
+      "critic_grad": 82300551.15878215,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 4339777.163891341,
+        "fc2": 3820233.0032059094,
+        "fc3": 82097216.00035109
+      }
+    },
+    {
+      "episode": 310,
+      "actor_grad": 0.0,
+      "critic_grad": 47148729.761737324,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 2804116.085808899,
+        "fc2": 2265028.0013637827,
+        "fc3": 47010736.00014874
+      }
+    },
+    {
+      "episode": 320,
+      "actor_grad": 0.0,
+      "critic_grad": 117738299.37191196,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 9597927.317354172,
+        "fc2": 6478604.005275436,
+        "fc3": 117167464.00064985
+      }
+    },
+    {
+      "episode": 330,
+      "actor_grad": 0.0,
+      "critic_grad": 158770809.975251,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 12309540.460268581,
+        "fc2": 7928534.006094091,
+        "fc3": 158094224.00065246
+      }
+    },
+    {
+      "episode": 340,
+      "actor_grad": 0.0,
+      "critic_grad": 312194983.84647155,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 23382248.771130297,
+        "fc2": 14412189.00775019,
+        "fc3": 310984352.0007212
+      }
+    },
+    {
+      "episode": 350,
+      "actor_grad": 0.0,
+      "critic_grad": 11127523.491202403,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 1068728.2835782233,
+        "fc2": 604245.1255964013,
+        "fc3": 11059588.000071896
+      }
+    },
+    {
+      "episode": 360,
+      "actor_grad": 0.0,
+      "critic_grad": 230101060.82588577,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 16895370.621322244,
+        "fc2": 12367889.009961527,
+        "fc3": 229146416.00121835
+      }
+    },
+    {
+      "episode": 370,
+      "actor_grad": 0.0,
+      "critic_grad": 8684191.186611911,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 773087.6270140505,
+        "fc2": 327512.21878642176,
+        "fc3": 8643509.000002913
+      }
+    },
+    {
+      "episode": 380,
+      "actor_grad": 0.0,
+      "critic_grad": 221083470.94347855,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 17791336.53029131,
+        "fc2": 11160842.0061101,
+        "fc3": 220083632.00064763
+      }
+    },
+    {
+      "episode": 390,
+      "actor_grad": 0.0,
+      "critic_grad": 319212552.8606703,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 24531854.94660242,
+        "fc2": 16095621.011949725,
+        "fc3": 317861248.00130135
+      }
+    },
+    {
+      "episode": 400,
+      "actor_grad": 0.0,
+      "critic_grad": 97506823.4840255,
+      "actor_per_layer": {
+        "fc1": 0.0,
+        "fc2": 0.0,
+        "fc3": 0.0
+      },
+      "critic_per_layer": {
+        "fc1": 7912212.35635098,
+        "fc2": 4988819.504273139,
+        "fc3": 97057144.00046344
+      }
+    }
+  ],
+  "asymmetry_history": [
+    {
+      "episode": 10,
+      "ratio": 2.507575273831012e-10,
+      "actor_grad": 3.5817924610326126,
+      "critic_grad": 14283888098.64295
+    },
+    {
+      "episode": 20,
+      "ratio": 3.049576658948414e-13,
+      "actor_grad": 0.006558243463592125,
+      "critic_grad": 21505422545.611973
+    },
+    {
+      "episode": 30,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 4682596548.635432
+    },
+    {
+      "episode": 40,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 9248570385.827467
+    },
+    {
+      "episode": 50,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 2425966098.5067024
+    },
+    {
+      "episode": 60,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 1337264488.9828613
+    },
+    {
+      "episode": 70,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 6736131221.516474
+    },
+    {
+      "episode": 80,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 1839626008.1463158
+    },
+    {
+      "episode": 90,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 1755656172.5997562
+    },
+    {
+      "episode": 100,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 306660263.4552873
+    },
+    {
+      "episode": 110,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 510370501.29688746
+    },
+    {
+      "episode": 120,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 7196375.893206609
+    },
+    {
+      "episode": 130,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 10244002.628009686
+    },
+    {
+      "episode": 140,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 113424245.97123066
+    },
+    {
+      "episode": 150,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 115858372.52454865
+    },
+    {
+      "episode": 160,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 227056833.73302087
+    },
+    {
+      "episode": 170,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 58072984.66083946
+    },
+    {
+      "episode": 180,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 23908512.046026517
+    },
+    {
+      "episode": 190,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 116494581.97408842
+    },
+    {
+      "episode": 200,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 93467290.91942827
+    },
+    {
+      "episode": 210,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 10967896.697384968
+    },
+    {
+      "episode": 220,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 57312075.49207675
+    },
+    {
+      "episode": 230,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 31026990.623615965
+    },
+    {
+      "episode": 240,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 55255641.22255876
+    },
+    {
+      "episode": 250,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 70975782.50722364
+    },
+    {
+      "episode": 260,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 16989772.007334612
+    },
+    {
+      "episode": 270,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 53627868.52749439
+    },
+    {
+      "episode": 280,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 26254920.672784016
+    },
+    {
+      "episode": 290,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 10649704.049458707
+    },
+    {
+      "episode": 300,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 82300551.15878215
+    },
+    {
+      "episode": 310,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 47148729.761737324
+    },
+    {
+      "episode": 320,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 117738299.37191196
+    },
+    {
+      "episode": 330,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 158770809.975251
+    },
+    {
+      "episode": 340,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 312194983.84647155
+    },
+    {
+      "episode": 350,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 11127523.491202403
+    },
+    {
+      "episode": 360,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 230101060.82588577
+    },
+    {
+      "episode": 370,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 8684191.186611911
+    },
+    {
+      "episode": 380,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 221083470.94347855
+    },
+    {
+      "episode": 390,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 319212552.8606703
+    },
+    {
+      "episode": 400,
+      "ratio": 0.0,
+      "actor_grad": 0.0,
+      "critic_grad": 97506823.4840255
+    }
+  ],
+  "activation_history": [
+    {
+      "episode": 10,
+      "mean_preact": 60.58150863647461,
+      "std_preact": 1702.64501953125,
+      "min_preact": -12610.25390625,
+      "max_preact": 12146.0458984375,
+      "avg_actor_output_saturation": 0.9514703575547866,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.06096450239419937,
+          "saturation": 0.9514703575547866
+        }
+      }
+    },
+    {
+      "episode": 20,
+      "mean_preact": 274.8001708984375,
+      "std_preact": 5022.47021484375,
+      "min_preact": -23055.02734375,
+      "max_preact": 22243.8515625,
+      "avg_actor_output_saturation": 0.9995401869158879,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.09639580547809601,
+          "saturation": 0.9995401869158879
+        }
+      }
+    },
+    {
+      "episode": 30,
+      "mean_preact": 423.9917297363281,
+      "std_preact": 7865.69775390625,
+      "min_preact": -32520.943359375,
+      "max_preact": 36904.82421875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 40,
+      "mean_preact": 484.11285400390625,
+      "std_preact": 9412.7998046875,
+      "min_preact": -36783.828125,
+      "max_preact": 47735.1328125,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 50,
+      "mean_preact": 517.3402709960938,
+      "std_preact": 10143.7841796875,
+      "min_preact": -38183.83203125,
+      "max_preact": 51623.25390625,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 60,
+      "mean_preact": 517.4059448242188,
+      "std_preact": 10484.7119140625,
+      "min_preact": -39003.46875,
+      "max_preact": 53251.8515625,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 70,
+      "mean_preact": 523.0079345703125,
+      "std_preact": 10506.8544921875,
+      "min_preact": -39208.41015625,
+      "max_preact": 53853.32421875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 80,
+      "mean_preact": 527.8252563476562,
+      "std_preact": 10546.1220703125,
+      "min_preact": -39305.5234375,
+      "max_preact": 53962.22265625,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 90,
+      "mean_preact": 538.8075561523438,
+      "std_preact": 10609.25390625,
+      "min_preact": -39364.54296875,
+      "max_preact": 54175.3671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 100,
+      "mean_preact": 548.6409912109375,
+      "std_preact": 10605.8671875,
+      "min_preact": -39406.58203125,
+      "max_preact": 54216.234375,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 110,
+      "mean_preact": 542.5068359375,
+      "std_preact": 10588.8427734375,
+      "min_preact": -39413.94140625,
+      "max_preact": 54240.51171875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 120,
+      "mean_preact": 536.2288818359375,
+      "std_preact": 10546.75,
+      "min_preact": -39386.96875,
+      "max_preact": 54234.8515625,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 130,
+      "mean_preact": 543.7353515625,
+      "std_preact": 10559.9853515625,
+      "min_preact": -39402.47265625,
+      "max_preact": 54246.9609375,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 140,
+      "mean_preact": 533.080078125,
+      "std_preact": 10565.14453125,
+      "min_preact": -39417.08203125,
+      "max_preact": 54248.03515625,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 150,
+      "mean_preact": 529.3607177734375,
+      "std_preact": 10579.6279296875,
+      "min_preact": -39417.109375,
+      "max_preact": 54248.29296875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 160,
+      "mean_preact": 546.0260009765625,
+      "std_preact": 10562.640625,
+      "min_preact": -39417.16015625,
+      "max_preact": 54188.48828125,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 170,
+      "mean_preact": 545.8564453125,
+      "std_preact": 10505.599609375,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 180,
+      "mean_preact": 529.5682373046875,
+      "std_preact": 10570.556640625,
+      "min_preact": -39403.30078125,
+      "max_preact": 54410.33203125,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 190,
+      "mean_preact": 534.406982421875,
+      "std_preact": 10545.857421875,
+      "min_preact": -39417.07421875,
+      "max_preact": 54340.5390625,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 200,
+      "mean_preact": 532.8959350585938,
+      "std_preact": 10549.3857421875,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 210,
+      "mean_preact": 538.5579223632812,
+      "std_preact": 10590.2626953125,
+      "min_preact": -39395.87890625,
+      "max_preact": 54303.12109375,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 220,
+      "mean_preact": 527.92822265625,
+      "std_preact": 10564.2373046875,
+      "min_preact": -39417.17578125,
+      "max_preact": 54248.37890625,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 230,
+      "mean_preact": 526.3142700195312,
+      "std_preact": 10558.80078125,
+      "min_preact": -39417.17578125,
+      "max_preact": 54303.1171875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 240,
+      "mean_preact": 544.9959106445312,
+      "std_preact": 10525.42578125,
+      "min_preact": -39417.17578125,
+      "max_preact": 54345.19140625,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 250,
+      "mean_preact": 528.6771240234375,
+      "std_preact": 10568.19140625,
+      "min_preact": -39417.17578125,
+      "max_preact": 54450.921875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 260,
+      "mean_preact": 543.9515991210938,
+      "std_preact": 10566.9482421875,
+      "min_preact": -39417.17578125,
+      "max_preact": 54220.53125,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 270,
+      "mean_preact": 531.1514892578125,
+      "std_preact": 10544.19140625,
+      "min_preact": -39387.8828125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 280,
+      "mean_preact": 542.5585327148438,
+      "std_preact": 10532.0615234375,
+      "min_preact": -39417.17578125,
+      "max_preact": 54240.08203125,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 290,
+      "mean_preact": 548.0074462890625,
+      "std_preact": 10550.8974609375,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 300,
+      "mean_preact": 529.8303833007812,
+      "std_preact": 10570.4921875,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 310,
+      "mean_preact": 528.7960205078125,
+      "std_preact": 10590.3583984375,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 320,
+      "mean_preact": 540.7796020507812,
+      "std_preact": 10602.4248046875,
+      "min_preact": -39417.17578125,
+      "max_preact": 54303.1171875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 330,
+      "mean_preact": 539.4306640625,
+      "std_preact": 10558.0556640625,
+      "min_preact": -39417.17578125,
+      "max_preact": 54450.91796875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 340,
+      "mean_preact": 525.7286987304688,
+      "std_preact": 10536.541015625,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 350,
+      "mean_preact": 543.2955932617188,
+      "std_preact": 10565.59765625,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 360,
+      "mean_preact": 529.8742065429688,
+      "std_preact": 10576.259765625,
+      "min_preact": -39417.17578125,
+      "max_preact": 54242.53125,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 370,
+      "mean_preact": 537.8228759765625,
+      "std_preact": 10573.0224609375,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 380,
+      "mean_preact": 533.0723266601562,
+      "std_preact": 10584.5869140625,
+      "min_preact": -39417.17578125,
+      "max_preact": 54410.33203125,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 390,
+      "mean_preact": 535.21728515625,
+      "std_preact": 10562.7060546875,
+      "min_preact": -39417.17578125,
+      "max_preact": 54206.671875,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    },
+    {
+      "episode": 400,
+      "mean_preact": 537.8342895507812,
+      "std_preact": 10609.591796875,
+      "min_preact": -39387.8828125,
+      "max_preact": 54312.40234375,
+      "avg_actor_output_saturation": 1.0,
+      "actor_activations_sample": {
+        "fc3": {
+          "min": -1.0,
+          "max": 1.0,
+          "mean": 0.1066666692495346,
+          "saturation": 1.0
+        }
+      }
+    }
+  ]
+}

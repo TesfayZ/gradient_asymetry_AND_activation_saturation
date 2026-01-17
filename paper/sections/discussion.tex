@@ -49,6 +49,24 @@ The actor's policy $\pi_{\theta_a}$ is optimized against $Q_{\theta_c}$, but $\t
 
 This explains why the recommended actor/critic LR ratio of $\sim$0.1 (actor LR $<$ critic LR) works empirically -- it partially compensates for the gradient magnitude imbalance, though it cannot fully resolve the non-stationarity issue.
 
+\subsection{Statistical Validation: Only 1 of 16 Configurations Converge}
+
+The severity of the learning rate sensitivity is underscored by our original thesis experiments~\cite{gebrekidan2024thesis}, which conducted 10 independent runs per configuration with 95\% confidence intervals. Remarkably, \textbf{only 1 of 16 learning rate combinations consistently achieved policy improvement}: actor LR = 0.0001 with critic LR = 0.001. This finding is replicated in our current experiments, as evidenced by Figure~\ref{fig:reward_comparison}. This optimal configuration falls precisely within the narrow window predicted by our analysis:
+\begin{itemize}
+    \item Actor LR = 0.0001 is conservative enough to avoid saturation (pre-activations remain bounded)
+    \item Critic LR = 0.001 provides sufficient learning speed while maintaining stability
+    \item The ratio $\eta_a / \eta_c = 0.1$ compensates for the gradient magnitude asymmetry
+\end{itemize}
+
+All 15 other configurations exhibited either:
+\begin{enumerate}
+    \item \textbf{Premature stopping} (actor LR $\geq$ 0.01): Tanh saturation within 300 episodes
+    \item \textbf{High variance} (actor LR = 0.0001, critic LR = 0.0001): Too slow to converge reliably within 2,000 episodes
+    \item \textbf{Instability} (actor LR = 0.001, critic LR = 0.1): Critic changes too rapidly for actor to track
+\end{enumerate}
+
+This statistical validation confirms that the gradient asymmetry creates an extremely narrow region of viable hyperparameters, making MADDPG-style algorithms fragile in practice without the mitigation strategies discussed below.
+
 \subsection{Practical Recommendations}
 
 Based on our analysis, we recommend:
@@ -115,21 +133,73 @@ This analysis has implications beyond MEC task offloading:
     \item \textbf{Reward shaping:} Dense reward shaping, often used to accelerate learning, can inadvertently increase reward magnitude and trigger premature actor saturation if learning rates are not correspondingly reduced.
 \end{enumerate}
 
-\subsection{Comparison with Existing Mitigation Techniques}
+\subsection{Mitigation Strategies from the Literature}
 
-Several techniques in the literature implicitly address aspects of the gradient asymmetry problem:
+Several techniques in the literature address aspects of the gradient asymmetry and saturation problems we identify. We categorize these by their mechanism of action.
+
+\subsubsection{Implicit Learning Rate Adjustment}
 
 \begin{itemize}
-    \item \textbf{Delayed policy updates (TD3):} By updating the actor less frequently than the critic, TD3 effectively reduces the actor's learning rate relative to the critic, aligning with our recommendation for conservative actor learning rates.
+    \item \textbf{Delayed policy updates (TD3)~\cite{fujimoto2018addressing}:} By updating the actor less frequently than the critic (typically every 2 critic updates), TD3 effectively halves the actor's learning rate relative to the critic. This aligns with our recommendation for conservative actor learning rates and partially compensates for gradient magnitude asymmetry.
 
-    \item \textbf{Entropy regularization (SAC):} The entropy bonus in SAC encourages policy diversity, potentially preventing early convergence to saturated outputs. However, this does not directly address the gradient magnitude asymmetry.
-
-    \item \textbf{Target networks:} Target networks stabilize critic learning but do not affect the actor's susceptibility to saturation.
-
-    \item \textbf{Gradient clipping:} While gradient clipping can prevent exploding gradients in critics, it does not address the vanishing gradient problem in actors caused by tanh saturation.
+    \item \textbf{Target networks~\cite{lillicrap2015continuous}:} Target networks stabilize critic learning by providing slowly-moving Q-targets, reducing the non-stationarity that actors must track. However, this does not directly address actor saturation.
 \end{itemize}
 
-Our analysis suggests that these techniques are incomplete solutions. A more direct approach would be to address the output activation asymmetry itself, either through alternative bounded activations or through explicit gradient balancing mechanisms.
+\subsubsection{Alternative Action Parameterizations}
+
+These approaches avoid tanh saturation by using different output distributions:
+
+\begin{itemize}
+    \item \textbf{Squashed Gaussian (SAC)~\cite{haarnoja2018soft}:} SAC parameterizes the policy as a Gaussian distribution over unbounded actions, then applies tanh squashing \textit{after} sampling. Crucially, gradients flow through the unbounded mean and standard deviation parameters, not through the tanh function. The log-probability correction $\log \pi(a|s) = \log \mu(u|s) - \sum_i \log(1 - \tanh^2(u_i))$ accounts for the squashing without creating gradient bottlenecks. This is the most direct solution to tanh saturation in the literature.
+
+    \item \textbf{Beta distribution~\cite{chou2017improving}:} Instead of squashing unbounded outputs, this approach uses the Beta distribution which naturally produces bounded outputs in $[0, 1]$. The policy outputs shape parameters $\alpha, \beta > 0$, and actions are sampled directly from $\text{Beta}(\alpha, \beta)$. This eliminates the saturating activation entirely while maintaining valid bounded actions.
+\end{itemize}
+
+\subsubsection{Normalization Techniques}
+
+\begin{itemize}
+    \item \textbf{Reward normalization~\cite{henderson2018deep}:} Normalizing rewards to zero mean and unit variance reduces the effective learning rate ($\eta \times |R|$), preventing the large weight updates that cause saturation. This is particularly important in multi-agent settings where reward magnitudes scale with agent count.
+
+    \item \textbf{Layer normalization~\cite{ba2016layer}:} Applying layer normalization before the tanh output keeps pre-activation values bounded, preventing extreme inputs that cause saturation. Unlike batch normalization~\cite{ioffe2015batch}, layer normalization operates per-sample and is suitable for RL where batch statistics are non-stationary.
+\end{itemize}
+
+\subsubsection{Training Procedure Modifications}
+
+\begin{itemize}
+    \item \textbf{Phasic policy gradient (PPG)~\cite{cobbe2021phasic}:} PPG separates policy and value function training into distinct phases, reducing gradient interference between actor and critic. This addresses the ``chasing a moving target'' dynamic by allowing the critic to stabilize before actor updates.
+
+    \item \textbf{Entropy regularization (SAC)~\cite{haarnoja2018soft}:} The entropy bonus $\mathcal{H}[\pi(\cdot|s)]$ encourages policy diversity, potentially preventing early convergence to deterministic (saturated) outputs. However, this is an indirect mitigation that does not address gradient magnitude asymmetry.
+
+    \item \textbf{Gradient clipping~\cite{pascanu2013difficulty}:} While gradient clipping can prevent exploding gradients in critics, it does not address the \textit{vanishing} gradient problem in actors caused by tanh saturation---clipping reduces large gradients but cannot amplify small ones.
+\end{itemize}
+
+\subsubsection{Summary and Recommendations}
+
+Table~\ref{tab:mitigations} summarizes the mitigation strategies and their effectiveness against our identified causes.
+
+\begin{table}[htbp]
+\caption{Mitigation Strategies vs. Causes of Gradient Asymmetry}
+\label{tab:mitigations}
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Mitigation} & \textbf{Loss} & \textbf{Path} & \textbf{Activation} \\
+ & \textbf{Asymm.} & \textbf{Length} & \textbf{Saturation} \\
+\midrule
+Delayed updates (TD3) & \ding{51} & -- & -- \\
+Squashed Gaussian (SAC) & -- & -- & \ding{51}\ding{51} \\
+Beta distribution & -- & -- & \ding{51}\ding{51} \\
+Reward normalization & \ding{51} & -- & \ding{51} \\
+Layer normalization & -- & -- & \ding{51} \\
+Phasic training (PPG) & -- & \ding{51} & -- \\
+Entropy regularization & -- & -- & \ding{51} \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize \ding{51}\ding{51} = directly addresses; \ding{51} = partially addresses; -- = does not address}
+\end{tabular}
+\end{table}
+
+Based on our analysis, the most effective mitigations for tanh saturation are \textbf{Squashed Gaussian} and \textbf{Beta distribution} parameterizations, as they bypass the saturating activation entirely. For practitioners using deterministic policies (DDPG/TD3), combining \textbf{reward normalization} with \textbf{layer normalization} before the tanh output provides a practical alternative without changing the policy structure.
 
 \subsection{Summary of Evidence}
 
@@ -146,3 +216,108 @@ Our comprehensive experiments validate the theoretical analysis through multiple
 \end{enumerate}
 
 These findings provide both theoretical explanation and empirical validation for the gradient asymmetry phenomenon in actor-critic architectures.
+
+\subsection{Network Capacity Does Not Prevent Saturation}
+
+A natural hypothesis is that increasing actor network capacity might prevent saturation by distributing the learning signal across more parameters and producing smaller pre-activation values. To test this, we conducted an ablation study where the actor hidden layers were increased from $(64 \rightarrow 32)$ to $(512 \rightarrow 128)$---matching the critic's hidden layer dimensions.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\columnwidth]{figures/large_actor_comparison.pdf}
+    \caption{Comparison of stopping episodes between small actor (64$\rightarrow$32, $\sim$2,500 parameters) and large actor (512$\rightarrow$128, $\sim$70,000 parameters). Despite 28$\times$ more parameters, the large actor still exhibits early stopping due to saturation. The green dashed line indicates the maximum training duration (2,000 episodes).}
+    \label{fig:large_actor}
+\end{figure}
+
+Table~\ref{tab:large_actor} summarizes the results for high learning rate configurations where early stopping was observed.
+
+\begin{table}[htbp]
+\caption{Stopping Episodes: Small vs Large Actor Architecture}
+\label{tab:large_actor}
+\centering
+\small
+\begin{tabular}{cccc}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Small (64$\rightarrow$32)} & \textbf{Large (512$\rightarrow$128)} \\
+\midrule
+0.1 & 0.1 & 161 & 161 \\
+0.1 & 0.01 & 176 & 194 \\
+0.1 & 0.001 & 217 & 245 \\
+0.1 & 0.0001 & 215 & 238 \\
+0.01 & 0.1 & 247 & 253 \\
+0.01 & 0.01 & 233 & 238 \\
+0.01 & 0.001 & 233 & 246 \\
+0.01 & 0.0001 & 233 & 240 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The results demonstrate that \textbf{increasing actor network capacity does not prevent tanh saturation}. The large actor (with 28$\times$ more parameters) shows nearly identical stopping episodes, with only marginal improvements of 5--28 episodes in some configurations. Critically, all high learning rate experiments still stopped well before 300 episodes out of 2,000.
+
+This finding confirms that the saturation problem is \textit{architectural} rather than \textit{capacity-limited}:
+\begin{itemize}
+    \item The bottleneck is the \textbf{tanh output activation}, not the hidden layer capacity
+    \item Larger networks can still produce extreme pre-activation values that saturate tanh
+    \item More parameters may even accelerate saturation by enabling larger weight updates
+\end{itemize}
+
+This result reinforces our recommendation that effective mitigations must address the output activation itself (e.g., Squashed Gaussian, Beta distribution) rather than simply increasing network size.
+
+\subsection{Linear Hidden Activations Exacerbate the Problem}
+
+A natural hypothesis is that ReLU activations in hidden layers might contribute to saturation by producing only positive values, potentially misaligned with negative reward signals. To test this, we replaced ReLU with linear (identity) activations in both actor and critic hidden layers, allowing the network to naturally represent negative values throughout computation.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\columnwidth]{figures/linear_activation_comparison.pdf}
+    \caption{Comparison of stopping episodes between ReLU and linear hidden layer activations. Despite removing nonlinearity from hidden layers, early stopping still occurs. The green dashed line indicates full training duration (2,000 episodes).}
+    \label{fig:linear_activation}
+\end{figure}
+
+Table~\ref{tab:linear_activation} compares the results.
+
+\begin{table}[htbp]
+\caption{Stopping Episodes: ReLU vs Linear Hidden Activations}
+\label{tab:linear_activation}
+\centering
+\small
+\begin{tabular}{cccc}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{ReLU Hidden} & \textbf{Linear Hidden} \\
+\midrule
+0.1 & 0.1 & 161 & 301 \\
+0.1 & 0.01 & 176 & 251 \\
+0.1 & 0.001 & 217 & 250 \\
+0.1 & 0.0001 & 215 & 269 \\
+0.01 & 0.1 & 247 & 307 \\
+0.01 & 0.01 & 233 & 307 \\
+0.01 & 0.001 & 233 & 286 \\
+0.01 & 0.0001 & 233 & 276 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Surprisingly, linear hidden activations show \textit{slightly delayed} stopping (33--140 additional episodes), but \textbf{pre-activation explosion is dramatically worse}:
+
+\begin{table}[htbp]
+\caption{Pre-activation Magnitudes: ReLU vs Linear Hidden Layers}
+\label{tab:linear_preact}
+\centering
+\small
+\begin{tabular}{ccc}
+\toprule
+\textbf{Actor LR} & \textbf{ReLU Pre-activation Range} & \textbf{Linear Pre-activation Range} \\
+\midrule
+0.1 & $\pm 1.07 \times 10^{6}$ & $\pm 1.83 \times 10^{7}$ \\
+0.01 & $\pm 5.2 \times 10^{3}$ & $\pm 8.1 \times 10^{4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With linear hidden layers, pre-activations explode to \textbf{18 million} (vs 1 million with ReLU)---a 17$\times$ increase. This occurs because:
+\begin{itemize}
+    \item ReLU provides implicit regularization by clipping negative values
+    \item Without nonlinearity, the network is effectively a single deep linear transformation
+    \item Large weights propagate directly through all layers without any dampening
+\end{itemize}
+
+This experiment conclusively demonstrates that the saturation problem originates at the \textbf{tanh output layer}, not the hidden layer activations. Modifying hidden layers---whether by changing size or activation function---cannot address the fundamental issue of bounded output activations combined with large learning rates.

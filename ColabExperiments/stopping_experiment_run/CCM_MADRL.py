@@ -485,7 +485,7 @@ class CCM_MADDPG(object):
                         whole_actions_var = actor_action_var.view(-1)
 
                         # Batched Q-value computation for all agents that proposed offload
-                        offload_mask = actor_action[:, 0] > 0
+                        offload_mask = actor_action[:, 0] >= 0
                         offload_indices = np.where(offload_mask)[0]
 
                         if len(offload_indices) > 0:

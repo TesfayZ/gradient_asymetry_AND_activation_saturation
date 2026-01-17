@@ -52,7 +52,7 @@ Building on our prior empirical observations~\cite{ccm_madrl, gebrekidan2024thes
 \textbf{Activation Saturation Tracking:}
 \begin{itemize}
     \item Output layer pre-activation values (tanh inputs)
-    \item Saturation ratio: fraction of outputs where $|\tanh(z)| > 0.9$
+    \item Saturation ratio: fraction of outputs across all 3 action dimensions (offload decision, compute allocation, transmission power) and all 50 agents where $|\tanh(z)| > 0.9$
     \item Per-layer activation statistics for hidden layers
 \end{itemize}
 
