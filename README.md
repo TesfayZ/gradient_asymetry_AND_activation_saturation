@@ -73,14 +73,14 @@ gradient_asymmetry/
 
 Tracks when actor gradients vanish across different learning rate configurations.
 
-### Mitigation Strategies Tested
+### Mitigation Strategies Under Investigation
 
-| Experiment | Hypothesis | Result |
+| Experiment | Hypothesis | Status |
 |------------|-----------|--------|
-| **Large Actor** | More parameters → more gradient paths | Partial improvement |
-| **LayerNorm** | Normalize pre-activations → prevent saturation | Effective |
-| **Linear Activations** | Remove ReLU → allow negative flow | Mixed results |
-| **Full Normalization** | LayerNorm on all layers | Best performance |
+| **Large Actor** | More parameters → more gradient paths | In progress |
+| **LayerNorm** | Normalize pre-activations → prevent saturation | In progress |
+| **Linear Activations** | Remove ReLU → allow negative flow | In progress |
+| **Full Normalization** | LayerNorm on all layers | In progress |
 
 ## Quick Start
 
