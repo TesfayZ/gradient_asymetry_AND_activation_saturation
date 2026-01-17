@@ -4,6 +4,16 @@
 [![arXiv](https://img.shields.io/badge/arXiv-coming_soon-b31b1b.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+## Motivation
+
+During PhD research on the [CCM-MADRL algorithm](https://doi.org/10.1145/3768579) for mobile edge computing, we observed an unexpected phenomenon: **actor networks stopped updating their weights early in training** while critic networks continued learning throughout. This asymmetry was highly sensitive to learning rate configurations.
+
+![Stopping Episodes from Thesis](paper/figures/fig0_thesis_stopping.png)
+
+*Figure: Stopping episodes across learning rate configurations. Each cell shows when actors stopped updating (darker = earlier stopping). Only specific learning rate combinations (bottom-left) allowed training to complete.*
+
+This observation motivated a deeper investigation into **why** this happens and **how** to prevent it.
+
 ## Overview
 
 This repository contains the research paper, experimental code, and analysis for investigating **gradient asymmetry** between actor and critic networks in actor-critic reinforcement learning architectures. We identify **activation saturation** (specifically tanh saturation in actor output layers) as the root cause of premature actor convergence.
@@ -20,6 +30,8 @@ Actor networks stop updating their weights early in training while critic networ
 | 0.1 | any | ~5 episodes | No |
 | 0.01 | any | ~5 episodes | No |
 | 0.0001 | 0.001 | >2000 episodes | **Yes** |
+
+This phenomenon is **not specific to multi-agent RL**—it applies to any actor-critic architecture using bounded output activations (tanh, sigmoid) for the actor.
 
 ## Repository Structure
 
