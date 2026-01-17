@@ -4,6 +4,8 @@
 [![arXiv](https://img.shields.io/badge/arXiv-coming_soon-b31b1b.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+> **⚠️ Ongoing Research**: This is an active research project. Results and discussions are preliminary and subject to change. Comments, contributions, and collaborations are welcome! Please open an issue or reach out if you'd like to contribute.
+
 ## Motivation
 
 During PhD research on the [CCM-MADRL algorithm](https://doi.org/10.1145/3768579) for mobile edge computing, we observed an unexpected phenomenon: **actor networks stopped updating their weights early in training** while critic networks continued learning throughout. This asymmetry was highly sensitive to learning rate configurations.
