@@ -167,7 +167,6 @@ Critic output: Q = W·h + b    (linear, no activation)
 @article{gradient_asymmetry2025,
   title={Gradient Asymmetry and Activation Saturation in Actor-Critic Networks},
   author={Gebrekidan, Tesfay Zemuy and others},
-  journal={arXiv preprint},
   year={2025}
 }
 ```
@@ -180,10 +179,10 @@ This research builds on the CCM-MADRL algorithm:
 @article{ccm_madrl,
   title={Client-Master Multiagent Deep Reinforcement Learning
          for Task Offloading in Mobile Edge Computing},
-  author={Gebrekidan, Tesfay Zemuy and Shojafar, Mohammad and
-          Pooranian, Zahra and Persico, Valerio and Pescapé, Antonio},
+  author={Gebrekidan, Tesfay Zemuy and Stein, Sebastian and
+          Timothy, Norman},
   journal={ACM Transactions on Autonomous and Adaptive Systems},
-  year={2024},
+  year={2025},
   doi={10.1145/3768579}
 }
 ```
