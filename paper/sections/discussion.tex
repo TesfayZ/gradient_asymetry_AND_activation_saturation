@@ -217,7 +217,9 @@ Our comprehensive experiments validate the theoretical analysis through multiple
 
 These findings provide both theoretical explanation and empirical validation for the gradient asymmetry phenomenon in actor-critic architectures.
 
-\subsection{Network Capacity Does Not Prevent Saturation}
+\subsection{Network Capacity Does Not Prevent Saturation (Preliminary)}
+
+\textit{Note: The following experiments are ongoing. Results presented here are preliminary and subject to revision.}
 
 A natural hypothesis is that increasing actor network capacity might prevent saturation by distributing the learning signal across more parameters and producing smaller pre-activation values. To test this, we conducted an ablation study where the actor hidden layers were increased from $(64 \rightarrow 32)$ to $(512 \rightarrow 128)$---matching the critic's hidden layer dimensions.
 
@@ -262,7 +264,9 @@ This finding confirms that the saturation problem is \textit{architectural} rath
 
 This result reinforces our recommendation that effective mitigations must address the output activation itself (e.g., Squashed Gaussian, Beta distribution) rather than simply increasing network size.
 
-\subsection{Linear Hidden Activations Exacerbate the Problem}
+\subsection{Linear Hidden Activations Exacerbate the Problem (Preliminary)}
+
+\textit{Note: The following experiments are ongoing. Results presented here are preliminary and subject to revision.}
 
 A natural hypothesis is that ReLU activations in hidden layers might contribute to saturation by producing only positive values, potentially misaligned with negative reward signals. To test this, we replaced ReLU with linear (identity) activations in both actor and critic hidden layers, allowing the network to naturally represent negative values throughout computation.
 
