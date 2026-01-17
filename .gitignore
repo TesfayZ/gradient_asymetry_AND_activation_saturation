@@ -92,3 +92,6 @@ checkpoint/
 # Windows Zone.Identifier files
 *:Zone.Identifier
 *.Zone.Identifier
+
+# Claude Code
+CLAUDE.md
