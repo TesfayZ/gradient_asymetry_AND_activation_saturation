@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Status:** Ongoing research - results and discussions are preliminary
 
+**Continuation of:** [CCM_MADRL_MEC](https://github.com/TesfayZ/CCM_MADRL_MEC) - This repo focuses on analyzing gradient asymmetry and activation saturation observed in that work.
+
 This research investigates why actor networks in actor-critic reinforcement learning stop updating their weights while critics continue learning. The root cause is identified as **tanh activation saturation** in actor output layers.
 
 **Key Finding:** Only 1 out of 16 learning rate combinations converged in experiments. Preventing activation saturation could make many more configurations viable, reducing hyperparameter search costs.

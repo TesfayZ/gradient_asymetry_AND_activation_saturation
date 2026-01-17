@@ -6,6 +6,8 @@
 
 > **⚠️ Ongoing Research**: This is an active research project. Results and discussions are preliminary and subject to change. Comments, contributions, and collaborations are welcome! Please open an issue or reach out if you'd like to contribute.
 
+> **📌 This repository is a continuation of [CCM_MADRL_MEC](https://github.com/TesfayZ/CCM_MADRL_MEC)**, which implements the Client-Master MADRL algorithm for MEC task offloading. Here, we focus specifically on analyzing the **gradient asymmetry** and **activation saturation** phenomena observed during that work.
+
 ## Motivation
 
 During PhD research on the [CCM-MADRL algorithm](https://doi.org/10.1145/3768579) for mobile edge computing, we observed an unexpected phenomenon: **actor networks stopped updating their weights early in training** while critic networks continued learning throughout. This asymmetry was highly sensitive to learning rate configurations.
