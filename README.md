@@ -1,33 +1,39 @@
-# Asymmetric Gradient Flow in Multi-Agent Actor-Critic Architectures
+# Gradient Asymmetry and Activation Saturation in Actor-Critic Networks
 
-[![Paper](https://img.shields.io/badge/Paper-PDF-red)](paper/main.tex)
+[![Paper](https://img.shields.io/badge/Paper-PDF-red)](paper/main.pdf)
+[![arXiv](https://img.shields.io/badge/arXiv-coming_soon-b31b1b.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Overview
 
-This repository contains the research paper, experimental code, and analysis tools for investigating **asymmetric gradient flow and learning rate sensitivity** in Client-Master Multi-Agent Actor-Critic architectures.
+This repository contains the research paper, experimental code, and analysis for investigating **gradient asymmetry** between actor and critic networks in actor-critic reinforcement learning architectures. We identify **activation saturation** (specifically tanh saturation in actor output layers) as the root cause of premature actor convergence.
 
 ### Key Finding
 
-Client agents (actors) in MADRL stop updating their neural network weights at different episode numbers depending on learning rate configurations, while the master agent (critic) continues learning until training completion. **Tanh output saturation** is identified as the primary mechanism causing this premature actor convergence.
+Actor networks stop updating their weights early in training while critic networks continue learning. This asymmetry is caused by:
 
-| Learning Rate | Stopping Episode | Converged? |
-|--------------|------------------|------------|
-| Actor=0.1, Critic=any | ~5 episodes | No |
-| Actor=0.01, Critic=any | ~5 episodes | No |
-| Actor=0.0001, Critic=0.001 | >2000 episodes | **Yes** |
+1. **Actor**: Uses tanh output activation → saturates at ±1 → vanishing gradients
+2. **Critic**: Uses linear output → no saturation → healthy gradient flow
+
+| Actor LR | Critic LR | Actor Stops At | Converged? |
+|----------|-----------|----------------|------------|
+| 0.1 | any | ~5 episodes | No |
+| 0.01 | any | ~5 episodes | No |
+| 0.0001 | 0.001 | >2000 episodes | **Yes** |
 
 ## Repository Structure
 
 ```
 gradient_asymmetry/
-├── README.md                 # This file
-├── requirements.txt          # Python dependencies
+├── README.md                    # This file
+├── CLAUDE.md                    # Development guidelines
+├── requirements.txt             # Python dependencies
 │
-├── paper/                    # LaTeX paper
-│   ├── main.tex             # Main paper file
-│   ├── references.bib       # Bibliography
-│   ├── sections/            # Paper sections
+├── paper/                       # LaTeX paper
+│   ├── main.tex                # Main paper file
+│   ├── main.pdf                # Compiled PDF
+│   ├── references.bib          # Bibliography
+│   ├── sections/               # Paper sections
 │   │   ├── introduction.tex
 │   │   ├── related_work.tex
 │   │   ├── background.tex
@@ -35,47 +41,66 @@ gradient_asymmetry/
 │   │   ├── analysis.tex
 │   │   ├── discussion.tex
 │   │   └── conclusion.tex
-│   └── figures/             # Paper figures
-│       ├── plot_num_episodes.png      # Figure 5.3: Stopping episodes
-│       ├── plot_until_stop.png        # Performance at stopping
-│       ├── plot_until_end.png         # Performance at end
-│       ├── plot_at_training.png       # Training performance
-│       └── AtEval_*.png / AtTraining_*.png  # Learning rate comparisons
+│   └── figures/                # Paper figures
 │
-├── experiments/              # Experimental code
-│   ├── run_experiment.py    # Main experiment runner
-│   ├── CCM_MADRL_with_tracking.py  # Modified CCM_MADRL with tracking
-│   │
-│   ├── gradient_tracking/   # Gradient magnitude analysis
-│   │   └── gradient_tracker.py
-│   │
-│   ├── preactivation_analysis/  # Tanh saturation analysis
-│   │   └── preactivation_tracker.py
-│   │
-│   └── results/             # Experiment outputs (generated)
-│
-└── data/                    # Raw experimental data (if included)
+└── ColabExperiments/           # Experiment code (Google Colab compatible)
+    │
+    ├── # Baseline experiments
+    ├── colab_notebook.ipynb           # Original experiment notebook
+    ├── run_stopping_experiment_colab.py
+    │
+    ├── # Mitigation experiments
+    ├── large_actor_experiment/        # Larger actor network (512→128)
+    ├── layernorm_experiment/          # LayerNorm before tanh
+    ├── layernorm_experiment_continued/
+    ├── fullnorm_experiment/           # Full normalization
+    ├── linear_activation_experiment/  # Linear hidden activations
+    │
+    ├── # Experiment results
+    ├── large_actor_results/
+    ├── layernorm_results/
+    ├── linear_activation_results/
+    │
+    ├── # Analysis & visualization
+    ├── generate_all_figures.py
+    ├── plot_analysis.py
+    └── figures/
 ```
+
+## Experiments
+
+### Baseline: Stopping Episode Detection
+
+Tracks when actor gradients vanish across different learning rate configurations.
+
+### Mitigation Strategies Tested
+
+| Experiment | Hypothesis | Result |
+|------------|-----------|--------|
+| **Large Actor** | More parameters → more gradient paths | Partial improvement |
+| **LayerNorm** | Normalize pre-activations → prevent saturation | Effective |
+| **Linear Activations** | Remove ReLU → allow negative flow | Mixed results |
+| **Full Normalization** | LayerNorm on all layers | Best performance |
 
 ## Quick Start
 
-### 1. Installation
+### 1. Clone Repository
 
 ```bash
-git clone https://github.com/TesfayZ/gradient_asymetry.git
-cd gradient_asymetry
+git clone https://github.com/TesfayZ/gradient_asymetry_AND_activation_saturation.git
+cd gradient_asymetry_AND_activation_saturation
 pip install -r requirements.txt
 ```
 
-### 2. Run Experiments
+### 2. Run Experiments (Google Colab)
 
-```bash
-# Run with optimal learning rates
-python experiments/run_experiment.py --actor_lr 0.0001 --critic_lr 0.001 --episodes 2000
+Upload the zip files from `ColabExperiments/` to Google Colab:
+- `layernorm_experiment.zip` - LayerNorm mitigation
+- `large_actor_experiment.zip` - Large actor network
+- `linear_activation_experiment.zip` - Linear activations
+- `fullnorm_experiment.zip` - Full normalization
 
-# Run with high learning rates (to observe early stopping)
-python experiments/run_experiment.py --actor_lr 0.01 --critic_lr 0.0001 --episodes 2000
-```
+Each contains a Jupyter notebook with experiment code.
 
 ### 3. Compile Paper
 
@@ -87,78 +112,47 @@ pdflatex main.tex
 pdflatex main.tex
 ```
 
-## Key Components
+## Root Cause Analysis
 
-### Gradient Tracker
+### The Saturation Mechanism
 
-Monitors gradient magnitudes for actors and critics during training:
+```
+Actor output: a = tanh(z)     where z = W·h + b
 
-```python
-from experiments.gradient_tracking.gradient_tracker import GradientTracker
+When |z| > 2:
+  tanh(z) ≈ ±1
+  tanh'(z) = 1 - tanh²(z) ≈ 0
 
-tracker = GradientTracker(actors=ccmaddpg.actors, critics=ccmaddpg.critics)
-
-# In training loop, after backward():
-tracker.log_gradients(episode=n_episodes)
-
-# After training:
-tracker.plot_gradient_history(save=True)
-print(tracker.get_summary())
+→ Gradients vanish at output layer
+→ No weight updates propagate backward
+→ Actor "stops learning"
 ```
 
-### Pre-activation Tracker
+### Why Critics Don't Stop
 
-Detects tanh saturation by monitoring pre-activation distributions:
-
-```python
-from experiments.preactivation_analysis.preactivation_tracker import PreActivationTracker
-
-tracker = PreActivationTracker(actors=ccmaddpg.actors)
-tracker.register_hooks()
-
-# In training loop:
-tracker.log_preactivations(episode=n_episodes)
-
-# Check for saturation:
-detection = tracker.detect_saturation()
-if detection['saturated']:
-    print(detection['message'])
 ```
+Critic output: Q = W·h + b    (linear, no activation)
 
-## Main Results
+∂Q/∂W = h                     (always non-zero)
 
-### Figure: Stopping Episodes by Learning Rate
-
-![Stopping Episodes](paper/figures/plot_num_episodes.png)
-
-*Higher learning rates cause all actors to stop updating within 5 episodes, while lower learning rates maintain gradient flow throughout training.*
-
-### Root Cause: Tanh Saturation
-
-The actor output layer uses tanh activation (bounded to [-1, 1]). With high learning rates and large negative rewards (-80 to -270):
-
-1. Weight updates are large: `Δw ≈ η × |R| × ∇w ≈ 10 × gradient`
-2. Pre-activation values grow rapidly
-3. `tanh'(z) = 1 - tanh²(z) → 0` when `|z| > 2`
-4. Gradients vanish at output layer → no weight updates
-
-The critic's linear output is immune to saturation, explaining why it continues learning.
+→ Gradients flow regardless of output magnitude
+→ Critic continues learning
+```
 
 ## Citation
 
 ```bibtex
-@article{gradient_asymmetry2024,
-  title={Asymmetric Gradient Flow and Learning Rate Sensitivity
-         in Client-Master Multi-Agent Actor-Critic Architectures},
-  author={[Authors]},
-  journal={[Journal/Conference]},
-  year={2024}
+@article{gradient_asymmetry2025,
+  title={Gradient Asymmetry and Activation Saturation in Actor-Critic Networks},
+  author={Gebrekidan, Tesfay Zemuy and others},
+  journal={arXiv preprint},
+  year={2025}
 }
 ```
 
 ## Related Work
 
-This research extends the CCM-MADRL algorithm:
+This research builds on the CCM-MADRL algorithm:
 
 ```bibtex
 @article{ccm_madrl,
@@ -175,7 +169,3 @@ This research extends the CCM-MADRL algorithm:
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## Contact
-
-For questions or collaboration inquiries, please open an issue or contact the authors.
