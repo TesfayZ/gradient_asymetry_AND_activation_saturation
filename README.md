@@ -8,7 +8,7 @@
 
 > **📌 This repository is a continuation of [CCM_MADRL_MEC](https://github.com/TesfayZ/CCM_MADRL_MEC)**, which implements the Client-Master MADRL algorithm for MEC task offloading. Here, we focus specifically on analyzing the **gradient asymmetry** and **activation saturation** phenomena observed during that work.
 
-> **📄 Paper:** For detailed analysis, methodology, and findings, see the [paper in progress](paper/main.pdf) (39 pages).
+> **📄 Paper:** For detailed analysis, methodology, and findings, see the [paper in progress](paper/main.pdf).
 
 ## Motivation
 
