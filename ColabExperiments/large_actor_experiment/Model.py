@@ -31,7 +31,8 @@ class ActorNetwork(nn.Module):
 
 class LargeActorNetwork(nn.Module):
     """
-    Large actor network matching critic hidden layer sizes: 7 -> 512 -> 128 -> 3
+    Large actor network with DOUBLE the critic hidden layer sizes: 7 -> 1024 -> 256 -> 3
+    (Critic uses 512 -> 128)
 
     Hypothesis: Larger network capacity may help avoid saturation by:
     1. Distributing learning signal across more parameters
@@ -39,10 +40,10 @@ class LargeActorNetwork(nn.Module):
     """
     def __init__(self, state_dim, output_size, output_activation, init_w=3e-3):
         super(LargeActorNetwork, self).__init__()
-        # Same hidden layer sizes as critic (512 -> 128)
-        self.fc1 = nn.Linear(state_dim, 512)
-        self.fc2 = nn.Linear(512, 128)
-        self.fc3 = nn.Linear(128, output_size)
+        # Double the critic hidden layer sizes (critic: 512 -> 128, actor: 1024 -> 256)
+        self.fc1 = nn.Linear(state_dim, 1024)
+        self.fc2 = nn.Linear(1024, 256)
+        self.fc3 = nn.Linear(256, output_size)
 
         self.fc3.weight.data.uniform_(-init_w, init_w)
         self.fc3.bias.data.uniform_(-init_w, init_w)

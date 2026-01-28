@@ -7,7 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Read original results
-original_dir = '/root/projects/gradient_asymetry/ColabExperiments/results'
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+original_dir = os.path.join(SCRIPT_DIR, 'results')
 original = {}
 for d in os.listdir(original_dir):
     if d.startswith('actor_'):
@@ -19,7 +20,7 @@ for d in os.listdir(original_dir):
             original[key] = data['stopping_episode']
 
 # Read large actor results
-large_dir = '/root/projects/gradient_asymetry/ColabExperiments/large_actor_results/large_actor_results'
+large_dir = os.path.join(SCRIPT_DIR, 'large_actor_experiment', 'large_actor_results', 'large_actor_results')
 large = {}
 for d in os.listdir(large_dir):
     if d.startswith('large_actor_'):
@@ -72,8 +73,12 @@ add_labels(bars1)
 add_labels(bars2)
 
 plt.tight_layout()
-plt.savefig('/root/projects/gradient_asymetry/ColabExperiments/figures/large_actor_comparison.png', dpi=150, bbox_inches='tight')
-plt.savefig('/root/projects/gradient_asymetry/paper/figures/large_actor_comparison.pdf', bbox_inches='tight')
+figures_dir = os.path.join(SCRIPT_DIR, 'figures')
+os.makedirs(figures_dir, exist_ok=True)
+plt.savefig(os.path.join(figures_dir, 'large_actor_comparison.png'), dpi=150, bbox_inches='tight')
+paper_fig_dir = os.path.join(SCRIPT_DIR, '..', 'paper', 'figures')
+if os.path.exists(paper_fig_dir):
+    plt.savefig(os.path.join(paper_fig_dir, 'large_actor_comparison.pdf'), bbox_inches='tight')
 print("Saved: figures/large_actor_comparison.png")
 print("Saved: paper/figures/large_actor_comparison.pdf")
 
@@ -100,7 +105,7 @@ for bar, diff in zip(bars, diffs):
                 ha='center', va='bottom' if height >= 0 else 'top', fontsize=10)
 
 plt.tight_layout()
-plt.savefig('/root/projects/gradient_asymetry/ColabExperiments/figures/large_actor_difference.png', dpi=150, bbox_inches='tight')
+plt.savefig(os.path.join(figures_dir, 'large_actor_difference.png'), dpi=150, bbox_inches='tight')
 print("Saved: figures/large_actor_difference.png")
 
 # Print summary statistics

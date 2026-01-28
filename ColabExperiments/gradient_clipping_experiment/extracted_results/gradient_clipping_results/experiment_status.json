@@ -1,0 +1,21 @@
+{
+  "completed": [
+    "gradclip_0.1_critic_0.1_run_0",
+    "gradclip_0.1_critic_0.01_run_0",
+    "gradclip_0.1_critic_0.001_run_0",
+    "gradclip_0.1_critic_0.0001_run_0",
+    "gradclip_0.01_critic_0.1_run_0",
+    "gradclip_0.01_critic_0.01_run_0",
+    "gradclip_0.01_critic_0.001_run_0",
+    "gradclip_0.01_critic_0.0001_run_0",
+    "gradclip_0.001_critic_0.1_run_0",
+    "gradclip_0.001_critic_0.01_run_0",
+    "gradclip_0.001_critic_0.001_run_0",
+    "gradclip_0.001_critic_0.0001_run_0",
+    "gradclip_0.0001_critic_0.1_run_0",
+    "gradclip_0.0001_critic_0.01_run_0",
+    "gradclip_0.0001_critic_0.001_run_0",
+    "gradclip_0.0001_critic_0.0001_run_0"
+  ],
+  "in_progress": null
+}

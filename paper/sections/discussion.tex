@@ -90,7 +90,7 @@ Based on our analysis, we recommend:
 \textbf{Architecture Modifications:}
 \begin{itemize}
     \item Consider replacing tanh with scaled sigmoid or softsign
-    \item Add gradient clipping on actor updates
+    \item Add gradient clipping on critic updates (see Section~\ref{sec:discussion} for why actor clipping is ineffective)
     \item Monitor pre-activation magnitudes during training
 \end{itemize}
 
@@ -327,3 +327,53 @@ With linear hidden layers, pre-activations explode to \textbf{18 million} (vs 1 
 \end{itemize}
 
 This experiment conclusively demonstrates that the saturation problem originates at the \textbf{tanh output layer}, not the hidden layer activations. Modifying hidden layers---whether by changing size or activation function---cannot address the fundamental issue of bounded output activations combined with large learning rates.
+
+\subsection{Gradient Clipping Does Not Prevent Actor Saturation (Preliminary)}
+
+\textit{Note: The following experiments are ongoing. Results presented here are preliminary and subject to revision.}
+
+A commonly recommended practice in deep RL is gradient clipping~\cite{pascanu2013difficulty}, which limits gradient norms to prevent explosive updates. We tested whether applying gradient clipping (max\_grad\_norm = 1.0, a standard value used in PPO, TD3, etc.) to both actor and critic networks could prevent the saturation-induced actor stopping.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\columnwidth]{figures/gradient_clipping_comparison.pdf}
+    \caption{Comparison of stopping episodes between baseline (no clipping) and gradient clipping (max\_grad\_norm=1.0). For high actor learning rates ($\geq 0.01$), gradient clipping provides no benefit. For low actor learning rates with high critic LR (0.1), clipping stabilizes training by preventing critic gradient explosion. The blue dashed line indicates full training duration (2,000 episodes).}
+    \label{fig:gradient_clipping}
+\end{figure}
+
+Table~\ref{tab:gradient_clipping} summarizes the results for configurations where the two approaches differ meaningfully.
+
+\begin{table}[htbp]
+\caption{Stopping Episodes: Baseline vs Gradient Clipping}
+\label{tab:gradient_clipping}
+\centering
+\small
+\begin{tabular}{cccc}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{Grad Clipping} \\
+\midrule
+0.1 & 0.1 & 161 & 200 \\
+0.1 & 0.01 & 188 & 197 \\
+0.1 & 0.001 & 218 & 213 \\
+0.1 & 0.0001 & 232 & 211 \\
+0.01 & 0.1 & 247 & 247 \\
+0.01 & 0.01 & 295 & 244 \\
+0.01 & 0.001 & 253 & 244 \\
+0.01 & 0.0001 & 265 & 253 \\
+0.001 & 0.1 & 595 & \textbf{2000} \\
+0.0001 & 0.1 & 1326 & \textbf{2000} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The results reveal a nuanced picture:
+
+\begin{itemize}
+    \item \textbf{High actor LR ($\geq 0.01$):} Gradient clipping provides \textit{no meaningful benefit}. Stopping episodes are nearly identical to baseline, confirming that the problem is vanishing (not exploding) actor gradients caused by tanh saturation.
+
+    \item \textbf{Low actor LR with high critic LR (0.1):} Gradient clipping \textit{does help} in two configurations: actor LR 0.001 with critic LR 0.1 improved from 595 to 2000 episodes, and actor LR 0.0001 with critic LR 0.1 improved from 1326 to 2000 episodes. In these cases, clipping prevents the \textit{critic's} explosive gradients from destabilizing training.
+
+    \item \textbf{Overall:} 8 of 16 configurations reached 2000 episodes with clipping vs 6 of 16 without---a modest improvement.
+\end{itemize}
+
+This confirms our theoretical prediction from Section~\ref{sec:discussion}: gradient clipping addresses \textit{exploding} gradients (critic side) but cannot amplify \textit{vanishing} gradients (actor side). The two configurations that improved were those where the critic LR was highest (0.1), causing critic gradient explosion that destabilized the actor indirectly. For the fundamental saturation problem at high actor learning rates, gradient clipping is ineffective.

@@ -28,11 +28,24 @@ import os
 import sys
 import json
 import time
+import random
 import torch
 import numpy as np
 from datetime import datetime
 from collections import defaultdict
 from copy import deepcopy
+
+
+def set_seed(seed):
+    """Set seed for reproducibility across all random sources."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 # Add experiment directory to path - Colab environment
 for _path in ['/content/fullnorm_experiment',
@@ -57,6 +70,9 @@ from utils import to_tensor_var, get_device
 
 
 class Config:
+    # Seed for reproducibility
+    SEED = 42
+
     # Learning rates: HIGH to LOW (failing cases first)
     CLIENT_LRS = [0.1, 0.01, 0.001, 0.0001]
     MASTER_LRS = [0.1, 0.01, 0.001, 0.0001]
@@ -102,8 +118,8 @@ class FullNormExperimentAgent:
         self.use_cuda = use_cuda and torch.cuda.is_available()
         self.device = get_device(self.use_cuda)
 
-        self.env = MecEnv(Config.N_AGENTS)
-        self.env_eval = MecEnv(Config.N_AGENTS)
+        self.env = MecEnv(Config.N_AGENTS, env_seed=Config.SEED)
+        self.env_eval = MecEnv(Config.N_AGENTS, env_seed=Config.SEED)
 
         self.n_agents = Config.N_AGENTS
         self.state_dim = Config.STATE_DIM
@@ -784,6 +800,10 @@ def run_single_experiment(actor_lr, critic_lr, run=0):
 
 def run_all_experiments():
     """Run all 16 experiments with FullNorm actor/critic."""
+    # Set seed for reproducibility
+    set_seed(Config.SEED)
+    print(f"Random seed set to: {Config.SEED}")
+
     print("="*70)
     print("FULL NORMALIZATION EXPERIMENT")
     print("Testing InputNorm + Post-activation LayerNorm (NO pre-tanh LN)")

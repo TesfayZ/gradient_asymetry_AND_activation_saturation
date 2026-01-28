@@ -32,11 +32,11 @@ Hardware & GPU (Google Colab) \\
 
 \textbf{Learning Rate Configurations:} We tested all 16 combinations of actor learning rates $\eta_a \in \{0.0001, 0.001, 0.01, 0.1\}$ and critic learning rates $\eta_c \in \{0.0001, 0.001, 0.01, 0.1\}$.
 
-\textbf{Controlled Variables:} To isolate learning rate effects, we fixed: PyTorch seed (23) for weight initialization, NumPy seed (23) for exploration sequences, and environment seed (37) for state transitions.
+\textbf{Controlled Variables:} To isolate learning rate effects, we fixed all random seeds (seed = 42) for reproducibility: PyTorch (including CUDA), NumPy, Python random, and environment seeds. We also set \texttt{torch.backends.cudnn.deterministic = True} and disabled cuDNN benchmarking. Our initial experiments were conducted without seed control; we subsequently re-ran all 16 configurations with fixed seeds to ensure reproducibility. The seeded results are used throughout this paper. The unseeded run exhibited the same structural patterns---identical stopping behavior for high actor learning rates and the same 6 of 16 configurations reaching full training---but with higher reward variance in converging configurations, underscoring the stochastic sensitivity of these algorithms even when the qualitative behavior is robust.
 
 \textbf{Hardware and Runtime:} Experiments were conducted on Google Colab using NVIDIA Tesla T4 GPUs. Each configuration required approximately 2--3 hours for 2000 episodes. Total experimental runtime was approximately 40 GPU-hours.
 
-\textbf{Reproducibility:} Code and experimental logs are available at \url{https://github.com/[anonymized]}. We note that results are from single runs per configuration; future work should include multiple seeds for statistical significance testing.
+\textbf{Reproducibility:} Code and experimental logs are available at \url{https://github.com/TesfayZ/gradient_asymetry_AND_activation_saturation}. Results are from single seeded runs per configuration; future work should include multiple seeds for statistical significance testing.
 
 \subsection{Comprehensive Gradient and Saturation Tracking}
 

@@ -69,12 +69,14 @@ gradient_asymmetry/
     ├── colab_notebook.ipynb           # Original experiment notebook
     ├── run_stopping_experiment_colab.py
     │
+    ├── # Baseline experiment
+    ├── original_experiment/           # Original stopping experiment (baseline)
+    │
     ├── # Mitigation experiments
     ├── large_actor_experiment/        # Larger actor network (512→128)
     ├── layernorm_experiment/          # LayerNorm before tanh
-    ├── layernorm_experiment_continued/
-    ├── fullnorm_experiment/           # Full normalization
     ├── linear_activation_experiment/  # Linear hidden activations
+    ├── gradient_clipping_experiment/  # Gradient clipping (max_norm=1.0)
     │
     ├── # Experiment results
     ├── large_actor_results/
@@ -91,7 +93,7 @@ gradient_asymmetry/
 
 ### Baseline: Stopping Episode Detection
 
-Tracks when actor gradients vanish across different learning rate configurations.
+Tracks when actor gradients vanish across different learning rate configurations. All experiments use seed=42 for reproducibility (PyTorch, NumPy, Python random, CUDA, and environment seeds). An earlier unseeded run showed the same structural patterns (identical stopping behavior, same 6/16 convergence rate) but with higher reward variance in converging configurations.
 
 ### Mitigation Strategies Under Investigation
 
@@ -100,9 +102,14 @@ Tracks when actor gradients vanish across different learning rate configurations
 | **Large Actor** | More parameters → distribute learning signal | Marginal improvement (5-28 episodes delay) |
 | **LayerNorm** | Normalize pre-activations → prevent saturation | In progress |
 | **Linear Activations** | Remove ReLU → allow negative flow | **Failed** - pre-activation explosion 17× worse |
-| **Full Normalization** | LayerNorm on all layers | In progress |
+| **Gradient Clipping** | Clip gradient norms (max=1.0) → prevent explosive updates | **Partially effective** - helps critic-side explosion (2 configs improved), but cannot fix actor vanishing gradients |
+| **Full Normalization** | LayerNorm on all layers | **Cancelled** - training too slow to be practical |
 
 *Note: Linear activations delayed stopping slightly but caused pre-activations to explode to ±18 million (vs ±1 million with ReLU), confirming the problem is at the tanh output layer, not hidden layers.*
+
+*Note: Gradient clipping helped 2 configurations where critic LR=0.1 caused gradient explosion (8/16 vs 6/16 reaching full training), but cannot fix vanishing actor gradients from tanh saturation.*
+
+*Note: Full normalization experiment was cancelled because the added normalization layers made training prohibitively slow with no clear benefit.*
 
 ## Quick Start
 
@@ -120,7 +127,7 @@ Upload the zip files from `ColabExperiments/` to Google Colab:
 - `layernorm_experiment.zip` - LayerNorm mitigation
 - `large_actor_experiment.zip` - Large actor network
 - `linear_activation_experiment.zip` - Linear activations
-- `fullnorm_experiment.zip` - Full normalization
+- `gradient_clipping_experiment.zip` - Gradient clipping
 
 Each contains a Jupyter notebook with experiment code.
 
