@@ -90,7 +90,7 @@ Based on our analysis, we recommend:
 \textbf{Architecture Modifications:}
 \begin{itemize}
     \item Consider replacing tanh with scaled sigmoid or softsign
-    \item Add gradient clipping on critic updates (see Section~\ref{sec:discussion} for why actor clipping is ineffective)
+    \item Add gradient clipping on critic updates (see Figure~\ref{fig:gradient_clipping} for why actor clipping is ineffective)
     \item Monitor pre-activation magnitudes during training
 \end{itemize}
 
@@ -376,4 +376,4 @@ The results reveal a nuanced picture:
     \item \textbf{Overall:} 8 of 16 configurations reached 2000 episodes with clipping vs 6 of 16 without---a modest improvement.
 \end{itemize}
 
-This confirms our theoretical prediction from Section~\ref{sec:discussion}: gradient clipping addresses \textit{exploding} gradients (critic side) but cannot amplify \textit{vanishing} gradients (actor side). The two configurations that improved were those where the critic LR was highest (0.1), causing critic gradient explosion that destabilized the actor indirectly. For the fundamental saturation problem at high actor learning rates, gradient clipping is ineffective.
+This confirms our theoretical prediction: gradient clipping addresses \textit{exploding} gradients (critic side) but cannot amplify \textit{vanishing} gradients (actor side). The two configurations that improved were those where the critic LR was highest (0.1), causing critic gradient explosion that destabilized the actor indirectly. For the fundamental saturation problem at high actor learning rates, gradient clipping is ineffective.

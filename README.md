@@ -4,116 +4,60 @@
 [![arXiv](https://img.shields.io/badge/arXiv-coming_soon-b31b1b.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **⚠️ Ongoing Research**: This is an active research project. Results and discussions are preliminary and subject to change. Comments, contributions, and collaborations are welcome! Please open an issue or reach out if you'd like to contribute.
+> **Ongoing Research**: Results and discussions are preliminary and subject to change.
 
-> **📌 This repository is a continuation of [CCM_MADRL_MEC](https://github.com/TesfayZ/CCM_MADRL_MEC)**, which implements the Client-Master MADRL algorithm for MEC task offloading. Here, we focus specifically on analyzing the **gradient asymmetry** and **activation saturation** phenomena observed during that work.
-
-> **📄 Paper:** For detailed analysis, methodology, and findings, see the [paper in progress](paper/main.pdf).
+> **Continuation of [CCM_MADRL_MEC](https://github.com/TesfayZ/CCM_MADRL_MEC)** — analyzing gradient asymmetry and activation saturation observed in that work.
 
 ## Motivation
 
-During PhD research on the [CCM-MADRL algorithm](https://doi.org/10.1145/3768579) for mobile edge computing, we observed an unexpected phenomenon: **actor networks stopped updating their weights early in training** while critic networks continued learning throughout. This asymmetry was highly sensitive to learning rate configurations.
+During PhD research on the [CCM-MADRL algorithm](https://doi.org/10.1145/3768579) for mobile edge computing, we observed that **actor networks stopped updating their weights early in training** while critic networks continued learning. **Only 1 out of 16 learning rate combinations converged** — 93.75% of configurations failed because actors stopped updating entirely due to activation saturation.
 
 ![Stopping Episodes from Thesis](paper/figures/fig0_thesis_stopping.png)
+*Stopping episodes across learning rate configurations. Darker = earlier stopping. Only the bottom-left corner allowed training to complete.*
 
-*Figure: Stopping episodes across learning rate configurations. Each cell shows when actors stopped updating (darker = earlier stopping). Only specific learning rate combinations (bottom-left) allowed training to complete.*
+## Key Finding
 
-**Only 1 out of 16 learning rate combinations converged.** This means 93.75% of hyperparameter configurations failed—not due to suboptimal learning, but because actors stopped updating entirely. Preventing activation saturation would make many more combinations viable, dramatically reducing hyperparameter search costs and saving compute resources.
+| Component | Output Activation | Gradient Behavior | Stops? |
+|-----------|------------------|-------------------|--------|
+| **Actor** | tanh (bounded) | Vanishes when saturated | Yes |
+| **Critic** | linear (unbounded) | Always flows | No |
 
-This observation motivated a deeper investigation into **why** this happens and **how** to prevent it.
-
-## Overview
-
-This repository contains the research paper, experimental code, and analysis for investigating **gradient asymmetry** between actor and critic networks in actor-critic reinforcement learning architectures. We identify **activation saturation** (specifically tanh saturation in actor output layers) as the root cause of premature actor convergence.
-
-### Key Finding
-
-Actor networks stop updating their weights early in training while critic networks continue learning. This asymmetry is caused by:
-
-1. **Actor**: Uses tanh output activation → saturates at ±1 → vanishing gradients
-2. **Critic**: Uses linear output → no saturation → healthy gradient flow
-
-| Actor LR | Critic LR | Actor Stops At | Converged? |
-|----------|-----------|----------------|------------|
-| 0.1 | any | ~5 episodes | No |
-| 0.01 | any | ~5 episodes | No |
-| 0.0001 | 0.001 | >2000 episodes | **Yes** |
-
-This phenomenon is **not specific to multi-agent RL**—it applies to any actor-critic architecture using bounded output activations (tanh, sigmoid) for the actor.
+High actor learning rates (0.01–0.1) cause tanh saturation within 161–247 episodes. Conservative rates (0.0001) maintain gradient flow throughout 2000 episodes. We measure a **4–8 order of magnitude** gradient asymmetry between actors and critics.
 
 ## Repository Structure
 
 ```
 gradient_asymmetry/
-├── README.md                    # This file
-├── CLAUDE.md                    # Development guidelines
-├── requirements.txt             # Python dependencies
+├── paper/                          # LaTeX paper
+│   ├── main.tex / main.pdf
+│   ├── sections/                   # intro, background, methodology, analysis, discussion, conclusion
+│   └── figures/
 │
-├── paper/                       # LaTeX paper
-│   ├── main.tex                # Main paper file
-│   ├── main.pdf                # Compiled PDF
-│   ├── references.bib          # Bibliography
-│   ├── sections/               # Paper sections
-│   │   ├── introduction.tex
-│   │   ├── related_work.tex
-│   │   ├── background.tex
-│   │   ├── methodology.tex
-│   │   ├── analysis.tex
-│   │   ├── discussion.tex
-│   │   └── conclusion.tex
-│   └── figures/                # Paper figures
-│
-└── ColabExperiments/           # Experiment code (Google Colab compatible)
-    │
-    ├── # Baseline experiments
-    ├── colab_notebook.ipynb           # Original experiment notebook
-    ├── run_stopping_experiment_colab.py
-    │
-    ├── # Baseline experiment
-    ├── original_experiment/           # Original stopping experiment (baseline)
-    │
-    ├── # Mitigation experiments
-    ├── large_actor_experiment/        # Larger actor network (512→128)
-    ├── layernorm_experiment/          # LayerNorm before tanh
-    ├── linear_activation_experiment/  # Linear hidden activations
-    ├── gradient_clipping_experiment/  # Gradient clipping (max_norm=1.0)
-    │
-    ├── # Experiment results
-    ├── large_actor_results/
-    ├── layernorm_results/
-    ├── linear_activation_results/
-    │
-    ├── # Analysis & visualization
-    ├── generate_all_figures.py
-    ├── plot_analysis.py
-    └── figures/
+└── ColabExperiments/               # Google Colab experiments
+    ├── original_experiment/        # Baseline (seed=42, all 16 LR configs)
+    ├── large_actor_experiment/     # 512→128 actor (28× more params)
+    ├── layernorm_experiment/       # LayerNorm before tanh output
+    ├── linear_activation_experiment/ # Linear hidden activations
+    ├── gradient_clipping_experiment/ # Gradient clipping (max_norm=1.0)
+    ├── fullnorm_experiment/        # Full normalization (cancelled)
+    └── plot_*.py, figures/         # Analysis scripts and plots
 ```
 
-## Experiments
+## Mitigation Experiments
 
-### Baseline: Stopping Episode Detection
+| Experiment | Result |
+|------------|--------|
+| **Large Actor** (512→128) | Marginal (5–28 episodes delay). Saturation is architectural, not capacity-limited. |
+| **LayerNorm** | In progress |
+| **Linear Activations** | Failed — pre-activation explosion 17× worse (±18M vs ±1M with ReLU) |
+| **Gradient Clipping** (norm=1.0) | Partially effective — helped 2 critic-LR=0.1 configs (8/16 vs 6/16 reaching full training), but cannot fix vanishing actor gradients |
+| **Full Normalization** | Cancelled — training prohibitively slow |
 
-Tracks when actor gradients vanish across different learning rate configurations. All experiments use seed=42 for reproducibility (PyTorch, NumPy, Python random, CUDA, and environment seeds). An earlier unseeded run showed the same structural patterns (identical stopping behavior, same 6/16 convergence rate) but with higher reward variance in converging configurations.
+## Reproducibility
 
-### Mitigation Strategies Under Investigation
-
-| Experiment | Hypothesis | Result |
-|------------|-----------|--------|
-| **Large Actor** | More parameters → distribute learning signal | Marginal improvement (5-28 episodes delay) |
-| **LayerNorm** | Normalize pre-activations → prevent saturation | In progress |
-| **Linear Activations** | Remove ReLU → allow negative flow | **Failed** - pre-activation explosion 17× worse |
-| **Gradient Clipping** | Clip gradient norms (max=1.0) → prevent explosive updates | **Partially effective** - helps critic-side explosion (2 configs improved), but cannot fix actor vanishing gradients |
-| **Full Normalization** | LayerNorm on all layers | **Cancelled** - training too slow to be practical |
-
-*Note: Linear activations delayed stopping slightly but caused pre-activations to explode to ±18 million (vs ±1 million with ReLU), confirming the problem is at the tanh output layer, not hidden layers.*
-
-*Note: Gradient clipping helped 2 configurations where critic LR=0.1 caused gradient explosion (8/16 vs 6/16 reaching full training), but cannot fix vanishing actor gradients from tanh saturation.*
-
-*Note: Full normalization experiment was cancelled because the added normalization layers made training prohibitively slow with no clear benefit.*
+All experiments use **seed=42** (PyTorch, NumPy, Python random, CUDA, environment). An earlier unseeded run showed the same structural patterns (identical stopping behavior, same 6/16 convergence rate) but with higher reward variance.
 
 ## Quick Start
-
-### 1. Clone Repository
 
 ```bash
 git clone https://github.com/TesfayZ/gradient_asymetry_AND_activation_saturation.git
@@ -121,51 +65,11 @@ cd gradient_asymetry_AND_activation_saturation
 pip install -r requirements.txt
 ```
 
-### 2. Run Experiments (Google Colab)
+**Run experiments** — upload zip files from experiment directories to Google Colab. Each contains a Jupyter notebook.
 
-Upload the zip files from `ColabExperiments/` to Google Colab:
-- `layernorm_experiment.zip` - LayerNorm mitigation
-- `large_actor_experiment.zip` - Large actor network
-- `linear_activation_experiment.zip` - Linear activations
-- `gradient_clipping_experiment.zip` - Gradient clipping
-
-Each contains a Jupyter notebook with experiment code.
-
-### 3. Compile Paper
-
+**Compile paper:**
 ```bash
-cd paper
-pdflatex main.tex
-bibtex main
-pdflatex main.tex
-pdflatex main.tex
-```
-
-## Root Cause Analysis
-
-### The Saturation Mechanism
-
-```
-Actor output: a = tanh(z)     where z = W·h + b
-
-When |z| > 2:
-  tanh(z) ≈ ±1
-  tanh'(z) = 1 - tanh²(z) ≈ 0
-
-→ Gradients vanish at output layer
-→ No weight updates propagate backward
-→ Actor "stops learning"
-```
-
-### Why Critics Don't Stop
-
-```
-Critic output: Q = W·h + b    (linear, no activation)
-
-∂Q/∂W = h                     (always non-zero)
-
-→ Gradients flow regardless of output magnitude
-→ Critic continues learning
+cd paper && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
 ```
 
 ## Citation
@@ -178,22 +82,8 @@ Critic output: Q = W·h + b    (linear, no activation)
 }
 ```
 
-## Related Work
-
-This research builds on the CCM-MADRL algorithm:
-
-```bibtex
-@article{ccm_madrl,
-  title={Client-Master Multiagent Deep Reinforcement Learning
-         for Task Offloading in Mobile Edge Computing},
-  author={Gebrekidan, Tesfay Zemuy and Stein, Sebastian and
-          Norman, Timothy J.},
-  journal={ACM Transactions on Autonomous and Adaptive Systems},
-  year={2025},
-  doi={10.1145/3768579}
-}
-```
+**Related:** [CCM-MADRL](https://doi.org/10.1145/3768579) (Gebrekidan, Stein, Norman — ACM TAAS 2025)
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
