@@ -6,7 +6,7 @@ This paper investigated the phenomenon of asymmetric convergence behavior betwee
 Our analysis revealed that \textbf{tanh output activation saturation} is the primary mechanism causing client agents to stop updating their neural network weights. Key findings include:
 
 \begin{enumerate}
-    \item \textbf{Learning-rate-dependent stopping:} High actor learning rates (0.01--0.1) cause all 50 agents to cease weight updates within 161--247 episodes, while lower rates (0.0001--0.001) maintain gradient flow throughout 2000 episodes of training.
+    \item \textbf{Learning-rate-dependent stopping:} High actor learning rates (0.01--0.1) cause all 50 agents to cease weight updates within 161--260 episodes, while lower rates (0.0001--0.001) maintain gradient flow throughout 2000 episodes of training.
 
     \item \textbf{Gradient magnitude asymmetry:} We measured a 4--8 order of magnitude difference in gradient norms between actors and critics ($\rho \sim 10^{-8}$ to $10^{-4}$), explaining why actors and critics exhibit differential sensitivity to learning rate selection.
 
@@ -19,7 +19,7 @@ These findings have important implications for the design and training of actor-
 
 \textbf{Hyperparameter Selection:} Actors should use learning rates approximately 10$\times$ lower than critics to compensate for the gradient asymmetry. Our results suggest actor learning rates in the range 0.0001--0.001 with critic rates of 0.001--0.01.
 
-\textbf{Architectural Understanding:} The empirical preference for smaller actor networks in the literature may be an implicit adaptation to the gradient flow constraints imposed by bounded output activations. Our analysis provides theoretical grounding for this practice.
+\textbf{Architectural Understanding:} The empirical preference for smaller actor networks in the literature may be an implicit adaptation to the gradient flow constraints imposed by bounded output activations. Our ablation experiments across six conditions (baseline, large actor, gradient clipping, LayerNorm, InputNorm, adaptive scaling) confirm two principles: (1) the intervention point matters more than the mechanism---mitigations operating at or near the tanh output layer (LayerNorm, adaptive scaling) produce the strongest improvements, while those operating elsewhere (InputNorm at the input, large actor via capacity) fail to address the gradient bottleneck; and (2) \textit{preventing stopping is necessary but not sufficient}---convergence rate (configurations achieving improved reward) is the true measure of mitigation effectiveness. InputNorm prevents stopping in all 16 configurations but improves reward in only 3, while adaptive scaling prevents stopping in 12/16 but improves reward in 9/16, making it the most broadly effective mitigation by the convergence criterion.
 
 \textbf{Monitoring Recommendations:} Practitioners should monitor pre-activation statistics and gradient ratios during training to detect early signs of actor saturation before weight updates cease entirely.
 
@@ -27,4 +27,8 @@ These findings have important implications for the design and training of actor-
 
 \subsection{Limitations and Future Work}
 
-Our analysis has limitations that suggest directions for future research. The experiments were conducted on a single domain (MEC task offloading); generalization to other continuous control environments (e.g., MuJoCo, robotic manipulation) requires validation. Our preliminary gradient clipping experiments confirm that clipping addresses critic gradient explosion but cannot resolve actor gradient vanishing caused by tanh saturation. Future work should explore alternative bounded activations with better gradient properties (e.g., softsign, scaled sigmoid) and develop adaptive learning rate schemes that account for the measured gradient asymmetry.
+Our analysis has limitations that suggest directions for future research. The experiments were conducted on a single domain (MEC task offloading); generalization to other continuous control environments (e.g., MuJoCo, robotic manipulation) requires validation. The current experiments use single runs per configuration (seed = 42), which suffices to identify the saturation mechanism but limits statistical claims about convergence rates. The convergence rate of 1/16 reported in our thesis~\cite{gebrekidan2024thesis} was established under different seed and environment settings with 10 runs per configuration; the current experiments show consistent structural patterns but are not directly comparable.
+
+Our six ablation experiments reveal that preventing stopping alone does not ensure convergence improvement: all effective mitigations degrade the low actor LR configurations that already succeed in the baseline, and none fully resolve the critic LR = 0.1 failure mode. The input normalization result is particularly instructive: despite eliminating all detected stopping (16/16 no-stop), it worsens reward in 13/16 configurations---demonstrating that stopping prevention without convergence improvement is not a meaningful advance.
+
+Future work should explore combining complementary mitigations (e.g., gradient clipping for critic stabilization with adaptive scaling for actor gradient flow), alternative bounded activations with better gradient properties (e.g., softsign, scaled sigmoid), and Squashed Gaussian and Beta distribution parameterizations that bypass saturating activations entirely.

@@ -49,25 +49,35 @@ The actor's policy $\pi_{\theta_a}$ is optimized against $Q_{\theta_c}$, but $\t
 
 This explains why the recommended actor/critic LR ratio of $\sim$0.1 (actor LR $<$ critic LR) works empirically -- it partially compensates for the gradient magnitude imbalance, though it cannot fully resolve the non-stationarity issue.
 
-\subsection{Statistical Validation: Only 1 of 16 Configurations Converge}
+\subsection{Convergence Rate as the Critical Metric}
 
-The severity of the learning rate sensitivity is underscored by our original thesis experiments~\cite{gebrekidan2024thesis}, which conducted 10 independent runs per configuration with 95\% confidence intervals. Remarkably, \textbf{only 1 of 16 learning rate combinations consistently achieved policy improvement}: actor LR = 0.0001 with critic LR = 0.001. This finding is replicated in our current experiments, as evidenced by Figure~\ref{fig:reward_comparison}. This optimal configuration falls precisely within the narrow window predicted by our analysis:
+A key distinction must be made between \textit{preventing stopping} (maintaining gradient flow) and \textit{achieving convergence} (producing policies with competitive reward). Preventing stopping is necessary but not sufficient: an actor that continues updating but never converges to a good policy has not benefited from the mitigation.
+
+\subsubsection{Prior Evidence: 1 of 16 Configurations Converge (Thesis)}
+
+The severity of the learning rate sensitivity was first established in our original thesis experiments~\cite{gebrekidan2024thesis}, which used a \textit{different random seed and environment configuration} from the current work. Those experiments conducted 10 independent runs per configuration with 95\% confidence intervals, finding that \textbf{only 1 of 16 learning rate combinations consistently achieved policy improvement}: actor LR = 0.0001 with critic LR = 0.001. This optimal configuration falls precisely within the narrow window predicted by our analysis:
 \begin{itemize}
     \item Actor LR = 0.0001 is conservative enough to avoid saturation (pre-activations remain bounded)
     \item Critic LR = 0.001 provides sufficient learning speed while maintaining stability
     \item The ratio $\eta_a / \eta_c = 0.1$ compensates for the gradient magnitude asymmetry
 \end{itemize}
 
-All 15 other configurations exhibited either:
+All 15 other thesis configurations exhibited either:
 \begin{enumerate}
-    \item \textbf{Premature stopping} (actor LR $\geq$ 0.01): Tanh saturation within 300 episodes
-    \item \textbf{High variance} (actor LR = 0.0001, critic LR = 0.0001): Too slow to converge reliably within 2,000 episodes
+    \item \textbf{Premature stopping} (actor LR $\geq$ 0.01): Tanh saturation within a few episodes
+    \item \textbf{High variance} (actor LR = 0.0001, critic LR = 0.0001): Too slow to converge reliably within the training horizon
     \item \textbf{Instability} (actor LR = 0.001, critic LR = 0.1): Critic changes too rapidly for actor to track
 \end{enumerate}
 
-This statistical validation confirms that the gradient asymmetry creates an extremely narrow region of viable hyperparameters, making MADDPG-style algorithms fragile in practice without the mitigation strategies discussed below.
+\subsubsection{Current Experiments: Consistent Structural Patterns}
 
-\textbf{Implications for Hyperparameter Search:} The fact that only 1 out of 16 (6.25\%) learning rate combinations converged represents a significant practical barrier. In the thesis experiments, 93.75\% of hyperparameter configurations failed---not due to suboptimal learning dynamics, but because actors stopped updating entirely due to activation saturation. This has profound implications for computational costs: exhaustive hyperparameter search wastes resources on configurations that are fundamentally incapable of learning. \textit{Preventing activation saturation would transform many of these failed configurations into viable candidates}, dramatically reducing hyperparameter search costs and making actor-critic algorithms more accessible to practitioners with limited computational budgets.
+Our current experiments (seed = 42, GPU-optimized implementation with updated MEC scaling) show the same structural patterns---actor LR is the dominant factor in stopping, and high actor learning rates cause stopping within 161--260 episodes. However, due to the different seed and environment configuration, the convergence rates are not directly comparable to the thesis results. The current single-run experiments serve to identify the \textit{mechanism} behind stopping (tanh saturation), not to establish convergence statistics.
+
+\subsubsection{Implications for Hyperparameter Search}
+
+Whether 1 of 16 (thesis) or a similarly small fraction converges, the practical barrier is the same: the vast majority of hyperparameter configurations fail because actors stop updating due to activation saturation. This has profound implications for computational costs: exhaustive hyperparameter search wastes resources on configurations that are fundamentally incapable of learning.
+
+However, \textit{simply preventing stopping does not guarantee convergence}. As our mitigation experiments demonstrate (Section~\ref{sec:discussion}\ref{subsec:mitigation_summary}), a mitigation that prevents stopping in 16/16 configurations but degrades reward in 13/16 (InputNorm) is worse than one that prevents stopping in 12/16 but improves reward in 9/16 (adaptive scaling). The convergence rate---defined as the number of configurations achieving competitive reward---is the appropriate metric for evaluating mitigations, not the stopping rate alone.
 
 \subsection{Practical Recommendations}
 
@@ -219,9 +229,7 @@ Our comprehensive experiments validate the theoretical analysis through multiple
 
 These findings provide both theoretical explanation and empirical validation for the gradient asymmetry phenomenon in actor-critic architectures.
 
-\subsection{Network Capacity Does Not Prevent Saturation (Preliminary)}
-
-\textit{Note: The following experiments are ongoing. Results presented here are preliminary and subject to revision.}
+\subsection{Network Capacity Does Not Prevent Saturation}
 
 A natural hypothesis is that increasing actor network capacity might prevent saturation by distributing the learning signal across more parameters and producing smaller pre-activation values. To test this, we conducted an ablation study where the actor hidden layers were increased from $(64 \rightarrow 32)$ to $(512 \rightarrow 128)$---matching the critic's hidden layer dimensions.
 
@@ -232,7 +240,7 @@ A natural hypothesis is that increasing actor network capacity might prevent sat
     \label{fig:large_actor}
 \end{figure}
 
-Table~\ref{tab:large_actor} summarizes the results for high learning rate configurations where early stopping was observed.
+Table~\ref{tab:large_actor} summarizes the results across all 16 learning rate configurations.
 
 \begin{table}[htbp]
 \caption{Stopping Episodes: Small vs Large Actor Architecture}
@@ -244,27 +252,37 @@ Table~\ref{tab:large_actor} summarizes the results for high learning rate config
 \textbf{Actor LR} & \textbf{Critic LR} & \textbf{Small (64$\rightarrow$32)} & \textbf{Large (512$\rightarrow$128)} \\
 \midrule
 0.1 & 0.1 & 161 & 161 \\
-0.1 & 0.01 & 176 & 194 \\
-0.1 & 0.001 & 217 & 245 \\
-0.1 & 0.0001 & 215 & 238 \\
-0.01 & 0.1 & 247 & 253 \\
-0.01 & 0.01 & 233 & 238 \\
-0.01 & 0.001 & 233 & 246 \\
-0.01 & 0.0001 & 233 & 240 \\
+0.1 & 0.01 & 162 & 208 \\
+0.1 & 0.001 & 222 & 246 \\
+0.1 & 0.0001 & 213 & 231 \\
+0.01 & 0.1 & 260 & 260 \\
+0.01 & 0.01 & 253 & 246 \\
+0.01 & 0.001 & 259 & 267 \\
+0.01 & 0.0001 & 260 & 266 \\
+0.001 & 0.1 & 944 & 298 \\
+0.001 & 0.01 & 2000 & 278 \\
+0.001 & 0.001 & 2000 & 284 \\
+0.001 & 0.0001 & 2000 & 271 \\
+0.0001 & 0.1 & 658 & 1078 \\
+0.0001 & 0.01 & 2000 & 2000 \\
+0.0001 & 0.001 & 2000 & 2000 \\
+0.0001 & 0.0001 & 2000 & 2000 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The results demonstrate that \textbf{increasing actor network capacity does not prevent tanh saturation}. The large actor (with 28$\times$ more parameters) shows nearly identical stopping episodes, with only marginal improvements of 5--28 episodes in some configurations. Critically, all high learning rate experiments still stopped well before 300 episodes out of 2,000.
+The results demonstrate that \textbf{increasing actor network capacity does not prevent tanh saturation}---and in fact \textbf{worsens it}. The large actor achieves only \textbf{3 of 16} no-stop configurations compared to \textbf{6 of 16} in the baseline. Most strikingly, three configurations that completed full training with the small actor (actor LR = 0.001, critic LR $\leq$ 0.01) now stop between episodes 271--298 with the large actor. Even the surviving configurations at actor LR = 0.0001 show partial actor stopping (5--13 of 50 agents).
+
+For high actor learning rates ($\geq 0.01$), stopping episodes remain comparable between architectures---both stop well before 300 episodes. The large actor shows marginal differences of $\pm$20 episodes, confirming that saturation onset is governed by the learning rate rather than network size.
 
 This finding confirms that the saturation problem is \textit{architectural} rather than \textit{capacity-limited}:
 \begin{itemize}
     \item The bottleneck is the \textbf{tanh output activation}, not the hidden layer capacity
-    \item Larger networks can still produce extreme pre-activation values that saturate tanh
-    \item More parameters may even accelerate saturation by enabling larger weight updates
+    \item Larger networks produce extreme pre-activation values that saturate tanh \textit{faster}, as more parameters enable larger weight updates per gradient step
+    \item The 28$\times$ increase in parameters (from $\sim$2,500 to $\sim$70,000) shifts the viable operating region to \textit{lower} learning rates rather than expanding it
 \end{itemize}
 
-This result reinforces our recommendation that effective mitigations must address the output activation itself (e.g., Squashed Gaussian, Beta distribution) rather than simply increasing network size.
+This result reinforces our recommendation that effective mitigations must address the output activation itself (e.g., Squashed Gaussian, Beta distribution) rather than simply increasing network size. Indeed, increasing capacity is counterproductive: it accelerates the very pathology it was hypothesized to prevent.
 
 \subsection{Linear Hidden Activations Exacerbate the Problem (Preliminary)}
 
@@ -353,15 +371,15 @@ Table~\ref{tab:gradient_clipping} summarizes the results for configurations wher
 \textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{Grad Clipping} \\
 \midrule
 0.1 & 0.1 & 161 & 200 \\
-0.1 & 0.01 & 188 & 197 \\
-0.1 & 0.001 & 218 & 213 \\
-0.1 & 0.0001 & 232 & 211 \\
-0.01 & 0.1 & 247 & 247 \\
-0.01 & 0.01 & 295 & 244 \\
-0.01 & 0.001 & 253 & 244 \\
-0.01 & 0.0001 & 265 & 253 \\
-0.001 & 0.1 & 595 & \textbf{2000} \\
-0.0001 & 0.1 & 1326 & \textbf{2000} \\
+0.1 & 0.01 & 162 & 197 \\
+0.1 & 0.001 & 222 & 213 \\
+0.1 & 0.0001 & 213 & 211 \\
+0.01 & 0.1 & 260 & 247 \\
+0.01 & 0.01 & 253 & 244 \\
+0.01 & 0.001 & 259 & 244 \\
+0.01 & 0.0001 & 260 & 253 \\
+0.001 & 0.1 & 944 & \textbf{2000} \\
+0.0001 & 0.1 & 658 & \textbf{2000} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -371,9 +389,436 @@ The results reveal a nuanced picture:
 \begin{itemize}
     \item \textbf{High actor LR ($\geq 0.01$):} Gradient clipping provides \textit{no meaningful benefit}. Stopping episodes are nearly identical to baseline, confirming that the problem is vanishing (not exploding) actor gradients caused by tanh saturation.
 
-    \item \textbf{Low actor LR with high critic LR (0.1):} Gradient clipping \textit{does help} in two configurations: actor LR 0.001 with critic LR 0.1 improved from 595 to 2000 episodes, and actor LR 0.0001 with critic LR 0.1 improved from 1326 to 2000 episodes. In these cases, clipping prevents the \textit{critic's} explosive gradients from destabilizing training.
+    \item \textbf{Low actor LR with high critic LR (0.1):} Gradient clipping \textit{does help} in two configurations: actor LR 0.001 with critic LR 0.1 improved from 944 to 2000 episodes, and actor LR 0.0001 with critic LR 0.1 improved from 658 to 2000 episodes. In these cases, clipping prevents the \textit{critic's} explosive gradients from destabilizing training.
 
     \item \textbf{Overall:} 8 of 16 configurations reached 2000 episodes with clipping vs 6 of 16 without---a modest improvement.
 \end{itemize}
 
 This confirms our theoretical prediction: gradient clipping addresses \textit{exploding} gradients (critic side) but cannot amplify \textit{vanishing} gradients (actor side). The two configurations that improved were those where the critic LR was highest (0.1), causing critic gradient explosion that destabilized the actor indirectly. For the fundamental saturation problem at high actor learning rates, gradient clipping is ineffective.
+
+\subsection{Layer Normalization Prevents Stopping but Degrades Learning (Preliminary)}
+
+\textit{Note: The following experiments are ongoing. Results presented here are preliminary and subject to revision.}
+
+A promising mitigation strategy is to apply layer normalization~\cite{ba2016layer} before the tanh output activation, keeping pre-activation values bounded and preventing the extreme inputs that cause saturation. We tested this by adding a LayerNorm layer immediately before the actor's tanh output across all 16 learning rate configurations.
+
+\subsubsection{Stopping Behavior: Significant Improvement}
+
+LayerNorm dramatically reduces actor stopping: \textbf{13 of 16 configurations} reached full training (2,000 episodes) compared to only 6 of 16 in the baseline. Table~\ref{tab:layernorm_stopping} compares stopping episodes.
+
+\begin{table}[htbp]
+\caption{Stopping Episodes: Baseline vs LayerNorm}
+\label{tab:layernorm_stopping}
+\centering
+\small
+\begin{tabular}{ccrr}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{LayerNorm} \\
+\midrule
+0.1 & 0.1 & 161 & 1069 \\
+0.1 & 0.01 & 162 & \textbf{2000} \\
+0.1 & 0.001 & 222 & \textbf{2000} \\
+0.1 & 0.0001 & 213 & \textbf{2000} \\
+0.01 & 0.1 & 260 & 1237 \\
+0.01 & 0.01 & 253 & \textbf{2000} \\
+0.01 & 0.001 & 259 & \textbf{2000} \\
+0.01 & 0.0001 & 260 & \textbf{2000} \\
+0.001 & 0.1 & 944 & 719 \\
+0.001 & 0.01 & 2000 & 2000 \\
+0.001 & 0.001 & 2000 & 2000 \\
+0.001 & 0.0001 & 2000 & 2000 \\
+0.0001 & 0.1 & 658 & \textbf{2000} \\
+0.0001 & 0.01 & 2000 & 2000 \\
+0.0001 & 0.001 & 2000 & 2000 \\
+0.0001 & 0.0001 & 2000 & 2000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Seven configurations that previously stopped now run to completion (bold entries in Table~\ref{tab:layernorm_stopping}). The three remaining stopped configurations all have critic LR = 0.1. Two show substantial delays compared to baseline (e.g., actor LR 0.1 improved from 161 to 1,069 episodes), but one regresses: actor LR 0.001 with critic LR 0.1 stops at episode 719 with LayerNorm versus 944 without. This pattern indicates that LayerNorm effectively addresses actor-side saturation for high actor learning rates but cannot fully compensate when the critic's learning rate is an order of magnitude larger than any actor learning rate.
+
+\subsubsection{Reward Performance: A Trade-off}
+
+Despite preventing stopping, LayerNorm does not uniformly improve learning quality. Table~\ref{tab:layernorm_rewards} compares average rewards over the final 10 episodes for each configuration.
+
+\begin{table}[htbp]
+\caption{Final Reward Comparison: Baseline vs LayerNorm (Last 10-Episode Average)}
+\label{tab:layernorm_rewards}
+\centering
+\small
+\begin{tabular}{ccrrr}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{LayerNorm} & \textbf{$\Delta$} \\
+\midrule
+0.1 & 0.1 & $-$45,880 & $-$37,185 & +8,695 \\
+0.1 & 0.01 & $-$37,052 & $-$33,998 & +3,054 \\
+0.1 & 0.001 & $-$46,853 & $-$46,506 & +347 \\
+0.1 & 0.0001 & $-$45,690 & $-$49,027 & $-$3,337 \\
+0.01 & 0.1 & $-$44,277 & $-$52,977 & $-$8,700 \\
+0.01 & 0.01 & $-$35,381 & $-$43,300 & $-$7,919 \\
+0.01 & 0.001 & $-$47,863 & $-$51,642 & $-$3,779 \\
+0.01 & 0.0001 & $-$51,333 & $-$43,525 & +7,808 \\
+0.001 & 0.1 & $-$42,854 & $-$32,882 & +9,972 \\
+0.001 & 0.01 & $-$42,954 & $-$26,094 & +16,860 \\
+0.001 & 0.001 & $-$46,148 & $-$39,131 & +7,017 \\
+0.001 & 0.0001 & $-$47,920 & $-$45,754 & +2,166 \\
+0.0001 & 0.1 & $-$35,654 & $-$46,820 & $-$11,166 \\
+0.0001 & 0.01 & $-$29,325 & $-$44,747 & $-$15,422 \\
+0.0001 & 0.001 & $-$35,812 & $-$28,768 & +7,044 \\
+0.0001 & 0.0001 & $-$32,547 & $-$44,934 & $-$12,387 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The reward comparison reveals a clear pattern:
+\begin{itemize}
+    \item \textbf{Actor LR = 0.001:} LayerNorm improves rewards across all four critic LRs, with the best improvement at critic LR = 0.01 ($-$42,954 $\rightarrow$ $-$26,094). This is the best-performing LayerNorm configuration overall.
+
+    \item \textbf{Actor LR = 0.1:} Mixed results---rewards improve for some critic LRs where baseline stopped early, but not consistently.
+
+    \item \textbf{Actor LR = 0.0001:} LayerNorm \textit{substantially degrades} performance. The baseline's best configuration (actor LR = 0.0001, critic LR = 0.01, reward $-$29,325) drops to $-$44,747 with LayerNorm---a 1.5$\times$ deterioration. LayerNorm hurts configurations that already work well in the low-LR regime.
+\end{itemize}
+
+\subsubsection{Saturation Persists Despite Normalization}
+
+Unexpectedly, output saturation ratios remain high even with LayerNorm. For actor LR $\geq$ 0.01, final saturation reaches 0.97--1.0, and even conservative actor LRs (0.0001) show saturation ratios of 0.96--0.97. Pre-activation values before the LayerNorm layer still reach $\pm 10^6$ for actor LR = 0.1, indicating that LayerNorm constrains the normalized output but cannot prevent the underlying weight explosion.
+
+The key distinction is that LayerNorm maintains gradient flow through the normalization parameters even when the tanh output is saturated. This explains why actors continue updating (no stopping) despite high saturation: the LayerNorm layer provides an alternative gradient path that bypasses the near-zero tanh derivative.
+
+\subsubsection{Interpretation}
+
+LayerNorm presents a trade-off rather than a solution:
+\begin{itemize}
+    \item \textbf{Prevents stopping:} 13/16 vs 6/16 configurations complete full training---a significant improvement for robustness across hyperparameter choices
+    \item \textbf{Shifts the optimal operating point:} The best actor LR shifts from 0.0001 (baseline, reward $-$29,325) to 0.001 (LayerNorm, reward $-$26,094). While LayerNorm's best reward slightly outperforms the baseline's best, this improvement comes at the cost of degrading the low-LR configurations where the baseline naturally succeeds
+    \item \textbf{Degrades low-LR configurations:} Configurations with actor LR = 0.0001 that work well without normalization are substantially worse with LayerNorm, suggesting that the normalization interferes with the actor's ability to learn precise policies in the conservative-LR regime
+\end{itemize}
+
+This result suggests that LayerNorm alone is insufficient as a mitigation for gradient asymmetry. While it addresses the \textit{symptom} (actor stopping), it does not resolve the \textit{underlying cause} (the fundamental gradient magnitude imbalance between actor and critic). More targeted approaches---such as Squashed Gaussian parameterization or reward normalization combined with LayerNorm---may be necessary to achieve both robustness and performance.
+
+\subsection{Input Normalization Eliminates Detected Stopping but Not Saturation (Preliminary)}
+
+\textit{Note: The following experiments are ongoing. Results presented here are preliminary and subject to revision.}
+
+An alternative normalization strategy is to apply normalization at the network \textit{input} rather than before the output activation. We tested this by adding a RunningNorm layer---which normalizes inputs using exponential moving averages of population mean and variance---to both actor and critic network inputs. Unlike LayerNorm (which normalizes across features per-sample), RunningNorm tracks cross-sample statistics, making it more suitable for the non-stationary data distributions common in RL. Crucially, \textbf{no normalization is applied to hidden layers or before the tanh output}.
+
+\textbf{Architecture:}
+\begin{itemize}
+    \item Actor: RunningNorm $\rightarrow$ 64 $\rightarrow$ ReLU $\rightarrow$ 32 $\rightarrow$ ReLU $\rightarrow$ tanh $\rightarrow$ 3
+    \item Critic: RunningNorm $\rightarrow$ 512 $\rightarrow$ ReLU $\rightarrow$ 128 $\rightarrow$ ReLU $\rightarrow$ 1 (linear)
+\end{itemize}
+
+\subsubsection{Stopping Behavior: Complete Elimination}
+
+InputNorm achieves the strongest stopping prevention of any mitigation tested: \textbf{all 16 of 16 configurations} show zero actors stopped, compared to 6/16 (baseline), 8/16 (gradient clipping), and 13/16 (LayerNorm). Table~\ref{tab:inputnorm_stopping} compares stopping episodes.
+
+\begin{table}[htbp]
+\caption{Stopping Episodes: Baseline vs InputNorm}
+\label{tab:inputnorm_stopping}
+\centering
+\small
+\begin{tabular}{ccrr}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{InputNorm} \\
+\midrule
+0.1 & 0.1 & 161 & \textbf{2000}$^\dagger$ \\
+0.1 & 0.01 & 162 & \textbf{2000} \\
+0.1 & 0.001 & 222 & \textbf{2000} \\
+0.1 & 0.0001 & 213 & \textbf{2000} \\
+0.01 & 0.1 & 260 & \textbf{2000} \\
+0.01 & 0.01 & 253 & \textbf{2000} \\
+0.01 & 0.001 & 259 & \textbf{2000} \\
+0.01 & 0.0001 & 260 & \textbf{2000} \\
+0.001 & 0.1 & 944 & \textbf{2000} \\
+0.001 & 0.01 & 2000 & 2000 \\
+0.001 & 0.001 & 2000 & 2000 \\
+0.001 & 0.0001 & 2000 & 2000 \\
+0.0001 & 0.1 & 658 & \textbf{2000} \\
+0.0001 & 0.01 & 2000 & 2000 \\
+0.0001 & 0.001 & 2000 & 2000 \\
+0.0001 & 0.0001 & 2000 & 2000 \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize $^\dagger$1,900 episodes completed (session timeout); 0/50 actors stopped.}
+\end{tabular}
+\end{table}
+
+All ten configurations that exhibited stopping in the baseline now run to completion. No individual actor (out of 50 per configuration) stopped in any experiment. This is a substantially stronger result than LayerNorm, which still had three configurations with stopping and one regression.
+
+\subsubsection{Reward Performance: Significant Degradation}
+
+Despite eliminating detected stopping, InputNorm does not improve---and in most cases substantially \textit{degrades}---reward performance. Table~\ref{tab:inputnorm_rewards} compares last-10-episode average rewards.
+
+\begin{table}[htbp]
+\caption{Final Reward Comparison: Baseline vs InputNorm (Last 10-Episode Average)}
+\label{tab:inputnorm_rewards}
+\centering
+\small
+\begin{tabular}{ccrrr}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{InputNorm} & \textbf{$\Delta$} \\
+\midrule
+0.1 & 0.1 & $-$45,880 & $-$44,990 & +890 \\
+0.1 & 0.01 & $-$37,052 & $-$42,402 & $-$5,350 \\
+0.1 & 0.001 & $-$46,853 & $-$57,561 & $-$10,708 \\
+0.1 & 0.0001 & $-$45,690 & $-$59,747 & $-$14,057 \\
+0.01 & 0.1 & $-$44,277 & $-$60,814 & $-$16,537 \\
+0.01 & 0.01 & $-$35,381 & $-$33,978 & +1,403 \\
+0.01 & 0.001 & $-$47,863 & $-$44,698 & +3,165 \\
+0.01 & 0.0001 & $-$51,333 & $-$45,021 & +6,312 \\
+0.001 & 0.1 & $-$42,854 & $-$59,331 & $-$16,477 \\
+0.001 & 0.01 & $-$42,954 & $-$59,798 & $-$16,844 \\
+0.001 & 0.001 & $-$46,148 & $-$59,645 & $-$13,497 \\
+0.001 & 0.0001 & $-$47,920 & $-$57,342 & $-$9,422 \\
+0.0001 & 0.1 & $-$35,654 & $-$58,473 & $-$22,819 \\
+0.0001 & 0.01 & $-$29,325 & $-$54,150 & $-$24,825 \\
+0.0001 & 0.001 & $-$35,812 & $-$68,231 & $-$32,419 \\
+0.0001 & 0.0001 & $-$32,547 & $-$44,047 & $-$11,500 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The reward comparison reveals widespread performance degradation:
+\begin{itemize}
+    \item \textbf{13 of 16 configurations are worse} with InputNorm, with degradations up to $-$32,419 (actor LR = 0.0001, critic LR = 0.001).
+
+    \item \textbf{Low actor LR configurations are most affected:} Actor LR = 0.0001 and 0.001 show uniformly worse rewards across all critic LRs. The baseline's best configuration (actor LR = 0.0001, critic LR = 0.01, reward $-$29,325) drops to $-$54,150 with InputNorm---a 1.8$\times$ deterioration.
+
+    \item \textbf{Only actor LR = 0.01 shows mild improvement:} Three of four critic LR combinations improve slightly, with the best at critic LR = 0.0001 (+6,312). The best InputNorm reward overall ($-$33,978 at actor LR = 0.01, critic LR = 0.01) is still worse than the baseline's best ($-$29,325).
+\end{itemize}
+
+\subsubsection{Saturation Analysis: Complete Saturation Despite No Detected Stopping}
+
+The most revealing finding is that \textbf{output saturation reaches 100\% across all 16 configurations}---every actor output is saturated ($|\tanh(z)| > 0.9$) by the end of training. Pre-activation magnitudes confirm:
+
+\begin{table}[htbp]
+\caption{InputNorm Final Pre-activation Magnitudes}
+\label{tab:inputnorm_preact}
+\centering
+\small
+\begin{tabular}{ccc}
+\toprule
+\textbf{Actor LR} & \textbf{Pre-activation Range} & \textbf{Saturation Ratio} \\
+\midrule
+0.1 & $\pm$1,374 to $\pm$3,442 & 1.00 \\
+0.01 & $\pm$109 to $\pm$199 & 1.00 \\
+0.001 & $\pm$21 to $\pm$37 & 1.00 \\
+0.0001 & $\pm$12 to $\pm$17 & 1.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compared to the baseline (Table~\ref{tab:preactivation}), InputNorm reduces pre-activation magnitudes by roughly 20--50$\times$ for high actor learning rates (e.g., $\pm$1,800 vs $\pm$66,600 at actor LR = 0.1). However, even the reduced values are far above the threshold where tanh gradients vanish ($|z| > 5$ yields $\tanh'(z) < 0.0002$), meaning gradient flow through the tanh output layer is effectively zero in all configurations.
+
+\subsubsection{Interpretation: Running Statistics Mask Stopping Detection}
+
+The apparent contradiction---zero detected stopping despite 100\% saturation and poor rewards---has a specific technical explanation. RunningNorm maintains \texttt{running\_mean}, \texttt{running\_var}, and \texttt{count} as registered buffers in the network's state dictionary. These statistics update on every forward pass during training (via exponential moving average), regardless of whether gradient-based weight updates occur.
+
+Our stopping detection checks whether \textit{any} parameter in the actor's state dictionary has changed between episodes. Because RunningNorm buffers are included in the state dictionary and change continuously, the detection \textbf{never triggers}---even if the learned parameters (fc1, fc2, fc3 weights and biases) have effectively frozen due to vanishing tanh gradients.
+
+This creates a misleading picture:
+\begin{itemize}
+    \item The actor's state dictionary changes every episode (running statistics update)
+    \item But the learned parameters may not be receiving meaningful gradient updates
+    \item The actor's effective function shifts due to normalization drift, not policy learning
+    \item This normalization drift does not constitute useful policy improvement, as confirmed by the poor reward performance
+\end{itemize}
+
+\subsubsection{Comparison with LayerNorm}
+
+The contrast between InputNorm and LayerNorm is instructive:
+
+\begin{itemize}
+    \item \textbf{LayerNorm} (before tanh output): Provides an \textit{alternative gradient path} through the normalization parameters, enabling genuine weight updates even when tanh is saturated. Result: 13/16 no-stop with improved rewards at actor LR = 0.001.
+
+    \item \textbf{InputNorm} (at network input): Normalizes input scale but does not address the tanh gradient bottleneck. Running statistics create an \textit{artifact in stopping detection} rather than maintaining gradient flow. Result: 16/16 apparent no-stop, but with universally worse rewards.
+\end{itemize}
+
+This comparison reinforces that the critical intervention point for mitigating tanh saturation is \textit{at or near the output layer}, not at the input. Input normalization is beneficial for training stability in general, but it cannot substitute for addressing the saturating activation directly.
+
+\subsection{Adaptive Scaling Maintains Gradient Flow and Improves Performance (Preliminary)}
+
+\textit{Note: The following experiments are ongoing. Results presented here are preliminary and subject to revision.}
+
+Rather than normalizing inputs or constraining pre-activations, adaptive scaling addresses saturation at the output layer by dynamically rescaling pre-activations \textit{before} the tanh function. The approach tracks strict per-dimension min/max of raw pre-activations ($G_\text{min}$, $G_\text{max}$) and linearly maps the observed range to a fixed target interval $[-r, +r]$ where $r = 4$:
+
+\begin{equation}
+z_\text{scaled} = \frac{z - \bar{G}}{(G_\text{max} - G_\text{min})/2} \cdot r, \quad \bar{G} = \frac{G_\text{max} + G_\text{min}}{2}
+\label{eq:adaptive_scaling}
+\end{equation}
+
+The tanh activation then receives $z_\text{scaled} \in [-4, +4]$, where $\tanh(\pm 4) \approx \pm 0.9993$---near-saturated at the extremes but with nonzero gradient $\tanh'(\pm 4) \approx 0.0013$. Tracking is strict (only expands, never shrinks) and per-dimension, requiring no hyperparameter tuning beyond the target range. Only the actor uses adaptive scaling; the critic retains its original architecture with linear output.
+
+\subsubsection{Stopping Behavior: Substantial Improvement}
+
+Adaptive scaling achieves \textbf{12 of 16 configurations} without stopping, compared to 6/16 in the baseline. Table~\ref{tab:adaptive_stopping} compares stopping episodes.
+
+\begin{table}[htbp]
+\caption{Stopping Episodes: Baseline vs Adaptive Scaling}
+\label{tab:adaptive_stopping}
+\centering
+\small
+\begin{tabular}{ccrr}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{Adaptive} \\
+\midrule
+0.1 & 0.1 & 161 & 1141 \\
+0.1 & 0.01 & 162 & \textbf{2000} \\
+0.1 & 0.001 & 222 & \textbf{2000} \\
+0.1 & 0.0001 & 213 & \textbf{2000} \\
+0.01 & 0.1 & 260 & 752 \\
+0.01 & 0.01 & 253 & \textbf{2000} \\
+0.01 & 0.001 & 259 & \textbf{2000} \\
+0.01 & 0.0001 & 260 & \textbf{2000} \\
+0.001 & 0.1 & 944 & 1307 \\
+0.001 & 0.01 & 2000 & 2000 \\
+0.001 & 0.001 & 2000 & 2000 \\
+0.001 & 0.0001 & 2000 & 2000 \\
+0.0001 & 0.1 & 658 & 799 \\
+0.0001 & 0.01 & 2000 & 2000 \\
+0.0001 & 0.001 & 2000 & 2000 \\
+0.0001 & 0.0001 & 2000 & 2000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two patterns are notable. First, \textbf{all configurations with critic LR $\neq$ 0.1 avoid stopping entirely}. The eight configurations that previously stopped at high actor learning rates (161--260 episodes) now complete the full 2,000 episodes. Second, the four configurations with critic LR = 0.1 still stop, but at substantially delayed episodes: 1,141 vs 161 (actor LR 0.1), 752 vs 260 (actor LR 0.01), 1,307 vs 944 (actor LR 0.001), and 799 vs 658 (actor LR 0.0001). The critic LR = 0.1 column remains problematic across all mitigations---gradient clipping, LayerNorm, and now adaptive scaling all fail to fully prevent stopping at this extreme critic learning rate.
+
+\textbf{Note on stopping detection:} Like InputNorm, the adaptive scaling actor includes registered buffers ($G_\text{min}$, $G_\text{max}$) in the state dictionary that could affect stopping detection. However, unlike InputNorm's running statistics (which change every forward pass), the strict min/max buffers only expand when \textit{new} pre-activation extremes are observed. The fact that stopping \textit{is} detected in 4 configurations---where $G_\text{min}$/$G_\text{max}$ stabilize alongside the learned weights---confirms that the detection mechanism remains reliable. In the 12 non-stopped configurations, the continued expansion of $G_\text{min}$/$G_\text{max}$ is consistent with ongoing weight updates that produce new pre-activation extremes.
+
+\subsubsection{Gradient Flow: How Adaptive Scaling Prevents Vanishing}
+
+The key mechanism is that adaptive scaling bounds the tanh input to $[-r, +r]$, ensuring a minimum gradient magnitude. The gradient of the actor output with respect to the raw pre-activation $z$ is:
+
+\begin{equation}
+\frac{\partial \tanh(z_\text{scaled})}{\partial z} = \tanh'(z_\text{scaled}) \cdot \frac{r}{(G_\text{max} - G_\text{min})/2}
+\label{eq:adaptive_gradient}
+\end{equation}
+
+For values near the center of the distribution, $z_\text{scaled} \approx 0$ and $\tanh'(0) = 1$, yielding a gradient of $2r / (G_\text{max} - G_\text{min})$. Even at the extremes, $\tanh'(\pm 4) \approx 0.0013$ provides a small but nonzero gradient. In contrast, the baseline produces pre-activations of $\pm 10^6$ where $\tanh'(z) \approx 0$ to machine precision.
+
+The trade-off is that as pre-activations grow and $(G_\text{max} - G_\text{min})$ expands, the scaling factor $r / ((G_\text{max} - G_\text{min})/2)$ shrinks, attenuating gradients. However, this attenuation is gradual (proportional to $1/G_\text{range}$) rather than catastrophic (exponentially decaying to zero as in unscaled tanh). This maintains sufficient gradient flow for the 12 non-stopped configurations to continue learning.
+
+\subsubsection{Saturation Analysis}
+
+A methodological note: our tracking infrastructure records saturation from \textit{raw} pre-activations (fc3 output before scaling), computing $|\tanh(z_\text{raw})| > 0.9$. Since $z_\text{raw}$ grows to extreme values, the reported saturation ratio approaches 1.0 for all configurations. However, the \textit{actual} network output is $\tanh(z_\text{scaled})$ where $z_\text{scaled} \in [-4, +4]$. The effective saturation---the fraction of outputs where the gradient is significantly attenuated---is determined by the distribution of $z_\text{scaled}$, not $z_\text{raw}$.
+
+Raw pre-activation magnitudes grow substantially over training, confirming that the actor weights continue to evolve:
+
+\begin{table}[htbp]
+\caption{Adaptive Scaling: Raw Pre-activation Growth Over Training}
+\label{tab:adaptive_preact}
+\centering
+\small
+\begin{tabular}{cccc}
+\toprule
+\textbf{Actor LR} & \textbf{Early (ep 10)} & \textbf{Mid (ep 1000)} & \textbf{Late (ep 2000)} \\
+\midrule
+0.1 & $\pm 5.8 \times 10^4$ & $\pm 2.6 \times 10^{10}$ & $\pm 2.4 \times 10^{11}$ \\
+0.01 & $\pm 272$ & $\pm 1.3 \times 10^7$ & $\pm 9.5 \times 10^7$ \\
+0.001 & $\pm 14$ & $\pm 1.9 \times 10^5$ & $\pm 1.4 \times 10^6$ \\
+0.0001 & $\pm 2.7$ & $\pm 786$ & $\pm 4,822$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The continued growth of raw pre-activations across all non-stopped configurations confirms that the learned parameters are genuinely updating---if weights were frozen, pre-activations would be bounded by the finite state space and would plateau.
+
+\subsubsection{Reward Performance: Significant Improvement for High Actor LR}
+
+Unlike InputNorm and LayerNorm, adaptive scaling shows substantial reward improvements for configurations that previously failed. Table~\ref{tab:adaptive_rewards} compares last-10-episode average rewards.
+
+\begin{table}[htbp]
+\caption{Final Reward Comparison: Baseline vs Adaptive Scaling (Last 10-Episode Average)}
+\label{tab:adaptive_rewards}
+\centering
+\small
+\begin{tabular}{ccrrr}
+\toprule
+\textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{Adaptive} & \textbf{$\Delta$} \\
+\midrule
+0.1 & 0.1 & $-$45,880 & $-$44,372 & +1,508 \\
+0.1 & 0.01 & $-$37,052 & $-$36,392 & +660 \\
+0.1 & 0.001 & $-$46,853 & $-$30,992 & +15,861 \\
+0.1 & 0.0001 & $-$45,690 & $-$30,576 & +15,114 \\
+0.01 & 0.1 & $-$44,277 & $-$32,032 & +12,245 \\
+0.01 & 0.01 & $-$35,381 & $-$36,172 & $-$791 \\
+0.01 & 0.001 & $-$47,863 & $-$32,520 & +15,343 \\
+0.01 & 0.0001 & $-$51,333 & $-$39,799 & +11,534 \\
+0.001 & 0.1 & $-$42,854 & $-$37,967 & +4,887 \\
+0.001 & 0.01 & $-$42,954 & $-$39,069 & +3,885 \\
+0.001 & 0.001 & $-$46,148 & $-$36,539 & +9,609 \\
+0.001 & 0.0001 & $-$47,920 & $-$50,041 & $-$2,121 \\
+0.0001 & 0.1 & $-$35,654 & $-$41,168 & $-$5,514 \\
+0.0001 & 0.01 & $-$29,325 & $-$42,618 & $-$13,293 \\
+0.0001 & 0.001 & $-$35,812 & $-$40,949 & $-$5,137 \\
+0.0001 & 0.0001 & $-$32,547 & $-$46,624 & $-$14,077 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The reward comparison reveals a clear pattern tied to actor learning rate:
+\begin{itemize}
+    \item \textbf{Actor LR = 0.1:} Three of four configurations show large improvements (up to +15,861), as actors that previously stopped within 200 episodes now train for the full 2,000. The best reward ($-$30,576 at critic LR = 0.0001) approaches the baseline's overall best ($-$29,325).
+
+    \item \textbf{Actor LR = 0.01:} Three of four configurations improve substantially (up to +15,343). These represent the largest absolute gains, as configurations that stopped at $\sim$260 episodes now achieve competitive rewards.
+
+    \item \textbf{Actor LR = 0.001:} Three of four configurations improve, with the largest gain at critic LR = 0.001 (+9,609).
+
+    \item \textbf{Actor LR = 0.0001:} All four configurations degrade, with the baseline's best (critic LR = 0.01, $-$29,325) dropping to $-$42,618. The adaptive scaling mechanism appears to interfere with the fine-grained updates that characterize successful low-LR training.
+\end{itemize}
+
+Overall, \textbf{9 of 16 configurations improve} with adaptive scaling---the highest ratio of any mitigation tested. The best adaptive reward ($-$30,576) is within 4\% of the baseline's best ($-$29,325), while the number of competitive configurations ($<$ $-$40,000) increases from 5 in the baseline to 10 with adaptive scaling.
+
+\subsubsection{Interpretation}
+
+Adaptive scaling is the most effective mitigation strategy tested in this work:
+\begin{itemize}
+    \item \textbf{Stopping prevention:} 12/16 configurations avoid stopping, with only the extreme critic LR = 0.1 column remaining problematic---a consistent failure mode shared with all other mitigations.
+
+    \item \textbf{Genuine learning:} Unlike InputNorm (which masked stopping detection through buffer drift), adaptive scaling maintains actual gradient flow through the tanh activation. The continued growth of raw pre-activations and the substantial reward improvements confirm that actors are genuinely learning.
+
+    \item \textbf{Reward improvement:} 9/16 configurations show better rewards than baseline, with the largest gains in previously-failed high-LR configurations. The best adaptive reward ($-$30,576) is competitive with the baseline's best ($-$29,325).
+
+    \item \textbf{Low-LR degradation:} Like LayerNorm, adaptive scaling degrades the actor LR = 0.0001 configurations that already work well in the baseline. The scaling mechanism, designed to prevent saturation at high learning rates, introduces unnecessary perturbation at low learning rates where saturation is not the binding constraint.
+\end{itemize}
+
+The success of adaptive scaling---which directly addresses the tanh output activation---further confirms the central thesis of this paper: the gradient asymmetry problem is rooted in the tanh output layer, and effective mitigations must operate at or near this activation. Input normalization (wrong location) and increased capacity (wrong mechanism) are insufficient; interventions that bound or rescale the tanh input (adaptive scaling, LayerNorm) produce meaningful improvements.
+
+\subsection{Comparative Summary of Mitigation Strategies}
+\label{subsec:mitigation_summary}
+
+Table~\ref{tab:mitigation_summary} consolidates results across all six experimental conditions.
+
+\begin{table}[htbp]
+\caption{Comparative Summary of All Mitigation Experiments}
+\label{tab:mitigation_summary}
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Experiment} & \textbf{No-Stop} & \textbf{Configs} & \textbf{Best} & \textbf{Mechanism} \\
+ & \textbf{Configs} & \textbf{Improved$^\dagger$} & \textbf{Reward} & \\
+\midrule
+Baseline & 6/16 & --- & $-$29,325 & --- \\
+Large Actor & 3/16 & 1/16 & $-$29,363 & Capacity \\
+Grad.\ Clipping & 8/16 & 4/16 & $-$29,399 & Gradient limit \\
+LayerNorm & 13/16 & 8/16 & $-$26,094 & Output norm. \\
+InputNorm & 16/16$^*$ & 3/16 & $-$33,978 & Input norm. \\
+Adaptive Scaling & 12/16 & 9/16 & $-$30,576 & Output scaling \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize $^\dagger$Configs with better last-10-episode reward than baseline.} \\
+\multicolumn{5}{l}{\footnotesize $^*$Detection artifact; see Section~6.10.4.}
+\end{tabular}
+\end{table}
+
+Several patterns emerge from this comparison:
+
+\textbf{Convergence rate, not stopping rate, is the critical metric.} The ``Configs Improved'' column in Table~\ref{tab:mitigation_summary} is more informative than ``No-Stop Configs'' for evaluating mitigation effectiveness. InputNorm achieves the highest no-stop count (16/16) but the lowest convergence improvement (3/16 configs with better reward). In contrast, adaptive scaling has fewer no-stop configurations (12/16) but the highest convergence rate (9/16 configs improved). This demonstrates that \textit{preventing stopping is necessary but not sufficient}---the mitigation must also enable the actor to learn a better policy.
+
+\textbf{Location matters more than mechanism.} The two most effective mitigations---LayerNorm and adaptive scaling---both operate at or near the tanh output layer. LayerNorm normalizes pre-activations; adaptive scaling rescales them. Both maintain gradient flow through the critical bottleneck. In contrast, InputNorm (at the network input) and large actor (distributed capacity) fail to address the actual gradient vanishing point, producing either detection artifacts or worse performance.
+
+\textbf{Critic LR = 0.1 is universally problematic.} Across all mitigations, configurations with critic LR = 0.1 remain the most likely to exhibit stopping or degraded performance. This suggests that extreme critic learning rates create instability that cannot be resolved by actor-side modifications alone. Gradient clipping partially addresses this specific failure mode by limiting critic gradient explosion.
+
+\textbf{Low actor LR configurations degrade.} Both LayerNorm and adaptive scaling improve high-LR configurations at the cost of degrading low-LR ones (actor LR = 0.0001). The baseline's best configuration (actor LR = 0.0001, critic LR = 0.01, reward $-$29,325) worsens with every mitigation except gradient clipping, which leaves it unchanged. This suggests that the mitigations introduce perturbation that disrupts the fine-grained learning that already succeeds in the conservative-LR regime.
+
+\textbf{No single mitigation dominates.} LayerNorm achieves the best single-configuration reward ($-$26,094) and the most no-stop configurations (13/16). Adaptive scaling achieves the most improved configurations (9/16) and the most no-stop configurations among genuine (non-artifact) mitigations (12/16). An optimal strategy might combine approaches---for example, using adaptive scaling for high actor learning rates while leaving low-LR configurations unmodified, or combining gradient clipping (for critic LR = 0.1) with adaptive scaling (for actor-side saturation).

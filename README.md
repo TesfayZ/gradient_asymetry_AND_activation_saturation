@@ -10,10 +10,10 @@
 
 ## Motivation
 
-During PhD research on the [CCM-MADRL algorithm](https://doi.org/10.1145/3768579) for mobile edge computing, we observed that **actor networks stopped updating their weights early in training** while critic networks continued learning. **Only 1 out of 16 learning rate combinations converged** — 93.75% of configurations failed because actors stopped updating entirely due to activation saturation.
+During PhD research on the [CCM-MADRL algorithm](https://doi.org/10.1145/3768579) for mobile edge computing, we observed that **actor networks stopped updating their weights early in training** while critic networks continued learning. In the [original thesis experiments](https://eprints.soton.ac.uk/491435/) (Chapter 5, different seed and environment setting), **only 1 out of 16 learning rate combinations converged** across 10 runs with 95% confidence intervals — 93.75% of configurations failed because actors stopped updating entirely due to activation saturation.
 
 ![Stopping Episodes from Thesis](paper/figures/fig0_thesis_stopping.png)
-*Stopping episodes across learning rate configurations. Darker = earlier stopping. Only the bottom-left corner allowed training to complete.*
+*Stopping episodes from thesis experiments (different seed/environment from current work). Darker = earlier stopping. Only the bottom-left corner allowed training to complete.*
 
 ## Key Finding
 
@@ -45,17 +45,24 @@ gradient_asymmetry/
 
 ## Mitigation Experiments
 
-| Experiment | Result |
-|------------|--------|
-| **Large Actor** (512→128) | Marginal (5–28 episodes delay). Saturation is architectural, not capacity-limited. |
-| **LayerNorm** | In progress |
-| **Linear Activations** | Failed — pre-activation explosion 17× worse (±18M vs ±1M with ReLU) |
-| **Gradient Clipping** (norm=1.0) | Partially effective — helped 2 critic-LR=0.1 configs (8/16 vs 6/16 reaching full training), but cannot fix vanishing actor gradients |
-| **Full Normalization** | Cancelled — training prohibitively slow |
+**Key insight:** Preventing early stopping sometimes improves convergence, but not always. InputNorm eliminates all detected stopping (16/16) yet worsens reward in 13/16 configurations. Convergence rate (configs with improved reward) — not stopping rate — is the true measure of effectiveness.
+
+| Experiment | No-Stop | Reward Improved | Best Reward | Verdict |
+|------------|---------|-----------------|-------------|---------|
+| **Baseline** | 6/16 | — | -29,325 | — |
+| **Large Actor** (512→128) | 3/16 | 1/16 | -29,363 | **Counterproductive** — larger network accelerates saturation |
+| **Gradient Clipping** (norm=1.0) | 8/16 | 4/16 | -29,399 | Partially effective — helps critic-LR=0.1 only |
+| **LayerNorm** | 13/16 | 8/16 | -26,094 | Mixed — best single reward but degrades low-LR configs |
+| **InputNorm** | 16/16* | 3/16 | -33,978 | **Misleading** — stops detection artifact; 13/16 worse reward |
+| **Adaptive Scaling** | 12/16 | 9/16 | -30,576 | **Most effective** by convergence criterion |
+| **Linear Activations** | — | — | — | Failed — pre-activation explosion 17× worse |
+| **Full Normalization** | — | — | — | Cancelled — training prohibitively slow |
+
+*\*Detection artifact; running statistics mask stopping detection (see paper).*
 
 ## Reproducibility
 
-All experiments use **seed=42** (PyTorch, NumPy, Python random, CUDA, environment). An earlier unseeded run showed the same structural patterns (identical stopping behavior, same 6/16 convergence rate) but with higher reward variance.
+All current experiments use **seed=42** (PyTorch, NumPy, Python random, CUDA, environment) with a GPU-optimized implementation and updated MEC environment scaling. An earlier unseeded run showed the same structural patterns (identical stopping behavior) but with higher reward variance. The thesis experiments (1/16 convergence rate) used a different seed and environment configuration with 10 runs per setting; current single-run experiments identify the saturation mechanism rather than establish convergence statistics.
 
 ## Quick Start
 
