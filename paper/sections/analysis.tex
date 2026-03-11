@@ -3,7 +3,7 @@
 
 \subsection{Experimental Setup}
 
-We systematically tested all 16 combinations of actor and critic learning rates (0.0001, 0.001, 0.01, 0.1) with controlled initialization (PyTorch seed 23, NumPy seed 23) to isolate learning rate effects. Each experiment tracked:
+We systematically tested all 16 combinations of actor and critic learning rates (0.0001, 0.001, 0.01, 0.1) with controlled initialization (seed = 42 for PyTorch, NumPy, Python random, and CUDA) to isolate learning rate effects. Each experiment tracked:
 \begin{itemize}
     \item Per-episode reward
     \item Per-layer gradient norms for actors and critics
@@ -19,7 +19,7 @@ Figure~\ref{fig:stopping_heatmap} shows the number of training episodes before c
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig1_stopping_heatmap.png}
-\Description{A 4x4 heatmap grid showing stopping episodes. The top two rows (actor LR 0.0001 and 0.001) show values near 2000, indicating no stopping. The bottom two rows (actor LR 0.01 and 0.1) show values between 161-247, indicating early stopping. The pattern shows actor learning rate as the dominant factor.}
+\Description{A 4x4 heatmap grid showing stopping episodes. The top two rows (actor LR 0.0001 and 0.001) show values near 2000, indicating no stopping. The bottom two rows (actor LR 0.01 and 0.1) show values between 161-260, indicating early stopping. The pattern shows actor learning rate as the dominant factor.}
 \caption{Stopping episodes for all 16 learning rate combinations (x-axis: critic LR, y-axis: actor LR). Color scale: green ($>$1500 episodes) indicates stable training; red ($<$300 episodes) indicates premature stopping due to tanh saturation. Actor LR is the dominant factor.}
 \label{fig:stopping_heatmap}
 \end{figure}
@@ -27,7 +27,7 @@ Figure~\ref{fig:stopping_heatmap} shows the number of training episodes before c
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig2_stopping_bubble.png}
-\Description{A scatter plot with bubbles at 16 grid positions. Large bubbles in top-left region (low actor LR) indicate late or no stopping (values near 2000). Small bubbles in bottom region (high actor LR) indicate early stopping (values 161-247). Bubble size directly correlates with stopping episode count.}
+\Description{A scatter plot with bubbles at 16 grid positions. Large bubbles in top-left region (low actor LR) indicate late or no stopping (values near 2000). Small bubbles in bottom region (high actor LR) indicate early stopping (values 161-260). Bubble size directly correlates with stopping episode count.}
 \caption{Bubble plot of stopping episodes. Bubble size and color indicate the number of episodes before actors stop. The clear diagonal pattern shows that actor learning rate is the dominant factor in determining when learning stops.}
 \label{fig:stopping_bubble}
 \end{figure}
@@ -44,18 +44,18 @@ Figure~\ref{fig:stopping_heatmap} shows the number of training episodes before c
 0.0001 & 0.0001 & 2000 & No stopping \\
 0.0001 & 0.001 & 2000 & No stopping \\
 0.0001 & 0.01 & 2000 & No stopping \\
-0.0001 & 0.1 & 696 & Late ($>$500) \\
+0.0001 & 0.1 & 658 & Late ($>$500) \\
 0.001 & 0.0001 & 2000 & No stopping \\
 0.001 & 0.001 & 2000 & No stopping \\
 0.001 & 0.01 & 2000 & No stopping \\
-0.001 & 0.1 & 763 & Late ($>$500) \\
-0.01 & 0.0001 & 233 & Early ($<$300) \\
-0.01 & 0.001 & 233 & Early ($<$300) \\
-0.01 & 0.01 & 233 & Early ($<$300) \\
-0.01 & 0.1 & 247 & Early ($<$300) \\
-0.1 & 0.0001 & 215 & Early ($<$300) \\
-0.1 & 0.001 & 217 & Early ($<$300) \\
-0.1 & 0.01 & 176 & Early ($<$300) \\
+0.001 & 0.1 & 944 & Late ($>$500) \\
+0.01 & 0.0001 & 260 & Early ($<$300) \\
+0.01 & 0.001 & 259 & Early ($<$300) \\
+0.01 & 0.01 & 253 & Early ($<$300) \\
+0.01 & 0.1 & 260 & Early ($<$300) \\
+0.1 & 0.0001 & 213 & Early ($<$300) \\
+0.1 & 0.001 & 222 & Early ($<$300) \\
+0.1 & 0.01 & 162 & Early ($<$300) \\
 0.1 & 0.1 & 161 & Early ($<$300) \\
 \bottomrule
 \multicolumn{4}{l}{\footnotesize $^\dagger$Single run per configuration; stopping detected when}\\
@@ -65,7 +65,7 @@ Figure~\ref{fig:stopping_heatmap} shows the number of training episodes before c
 
 \textbf{Key Observations:}
 \begin{enumerate}
-    \item Actor learning rates $\geq 0.01$ cause early stopping (161--247 episodes)
+    \item Actor learning rates $\geq 0.01$ cause early stopping (161--260 episodes)
     \item Actor learning rates $\leq 0.001$ generally allow full training (2000 episodes)
     \item High critic learning rate (0.1) can induce stopping even with low actor LR
     \item The master agent (critic) \textbf{never stops} at any learning rate configuration
@@ -106,7 +106,7 @@ Figure~\ref{fig:asymmetry_stopping} shows the correlation between final gradient
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig6_asymmetry_vs_stopping.png}
-\Description{Scatter plot with x-axis showing stopping episode (0-2000) and y-axis showing asymmetry ratio (log scale). Points cluster into two groups: high actor LR points at left (early stopping, episodes 161-247) and low actor LR points at right (late/no stopping, episodes 696-2000).}
+\Description{Scatter plot with x-axis showing stopping episode (0-2000) and y-axis showing asymmetry ratio (log scale). Points cluster into two groups: high actor LR points at left (early stopping, episodes 161-260) and low actor LR points at right (late/no stopping, episodes 658-2000).}
 \caption{Final gradient asymmetry ratio vs stopping episode. Color indicates actor learning rate. Higher actor learning rates cluster in the early-stopping, high-asymmetry region, confirming the link between gradient imbalance and premature learning termination.}
 \label{fig:asymmetry_stopping}
 \end{figure}
@@ -147,7 +147,7 @@ A critical question is whether the observed saturation represents \textit{legiti
 \begin{itemize}
     \item Minimum output: $-1.0000$ (saturated negative)
     \item Maximum output: $+1.0000$ (saturated positive)
-    \item Mean output: $\approx 0$ (ranging from $-0.07$ to $+0.06$)
+    \item Mean output: $\approx 0$ (ranging from $-0.12$ to $+0.05$)
 \end{itemize}
 This indicates that approximately half of the 150 outputs (50 agents $\times$ 3 actions) are saturated at $+1$ and half at $-1$, rather than converging to specific optimal values.
 
@@ -162,15 +162,15 @@ This indicates that approximately half of the 150 outputs (50 agents $\times$ 3 
 \toprule
 \textbf{Actor LR} & \textbf{Pre-activation Range} & \textbf{Gradient Flow} \\
 \midrule
-0.1 & $-1,068,000$ to $+1,070,000$ & $\approx 0$ \\
-0.01 & $-5,200$ to $+5,100$ & $\approx 0$ \\
-0.001 & $-50$ to $+50$ & $< 1\%$ \\
-0.0001 & $-3$ to $+3$ & Normal \\
+0.1 & $-66,600$ to $+74,900$ & $\approx 0$ \\
+0.01 & $-287$ to $+287$ & $\approx 0$ \\
+0.001 & $-56$ to $+54$ & $< 1\%$ \\
+0.0001 & $-18$ to $+20$ & Reduced \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-For context, $\tanh(3) \approx 0.995$ with gradient $\tanh'(3) \approx 0.01$ (1\% flow), $\tanh(5) \approx 0.99991$ with gradient $\approx 0.00018$ (0.02\% flow), and $\tanh(10^6) = 1.0$ exactly with gradient $\approx 0$ (no flow). The pre-activation values in high-LR experiments are so extreme that gradients are computationally zero, rendering the network completely untrainable.
+For context, $\tanh(3) \approx 0.995$ with gradient $\tanh'(3) \approx 0.01$ (1\% flow), $\tanh(5) \approx 0.99991$ with gradient $\approx 0.00018$ (0.02\% flow), and $\tanh(10^4) = 1.0$ exactly with gradient $\approx 0$ (no flow). Even at the lowest actor LR (0.0001), pre-activations reach $\pm 20$, producing reduced but nonzero gradient flow that sustains learning. In contrast, the pre-activation values in high-LR experiments are so extreme that gradients are computationally zero, rendering the network completely untrainable.
 
 This analysis conclusively demonstrates that the observed saturation is \textit{not} the network converging to optimal actions that happen to be at the boundaries, but rather a pathological state where pre-activations have exploded to extreme values and the network is frozen.
 

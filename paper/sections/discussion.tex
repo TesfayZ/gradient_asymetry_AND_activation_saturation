@@ -639,18 +639,18 @@ This comparison reinforces that the critical intervention point for mitigating t
 
 \textit{Note: The following experiments are ongoing. Results presented here are preliminary and subject to revision.}
 
-Rather than normalizing inputs or constraining pre-activations, adaptive scaling addresses saturation at the output layer by dynamically rescaling pre-activations \textit{before} the tanh function. The approach tracks strict per-dimension min/max of raw pre-activations ($G_\text{min}$, $G_\text{max}$) and linearly maps the observed range to a fixed target interval $[-r, +r]$ where $r = 4$:
+Rather than normalizing inputs or constraining pre-activations, adaptive scaling addresses saturation at the output layer by dynamically rescaling pre-activations \textit{before} the tanh function. The approach tracks strict per-dimension min/max of raw pre-activations ($G_\text{min}$, $G_\text{max}$) and linearly maps the observed range to a fixed target interval $[-r, +r]$ where $r = 2$:
 
 \begin{equation}
 z_\text{scaled} = \frac{z - \bar{G}}{(G_\text{max} - G_\text{min})/2} \cdot r, \quad \bar{G} = \frac{G_\text{max} + G_\text{min}}{2}
 \label{eq:adaptive_scaling}
 \end{equation}
 
-The tanh activation then receives $z_\text{scaled} \in [-4, +4]$, where $\tanh(\pm 4) \approx \pm 0.9993$---near-saturated at the extremes but with nonzero gradient $\tanh'(\pm 4) \approx 0.0013$. Tracking is strict (only expands, never shrinks) and per-dimension, requiring no hyperparameter tuning beyond the target range. Only the actor uses adaptive scaling; the critic retains its original architecture with linear output.
+The tanh activation then receives $z_\text{scaled} \in [-2, +2]$, where $\tanh(\pm 2) \approx \pm 0.964$---utilizing most of the output range while maintaining viable gradients with $\tanh'(\pm 2) \approx 0.07$. Tracking is strict (only expands, never shrinks) and per-dimension, requiring no hyperparameter tuning beyond the target range. Additionally, gradient clipping (max\_norm = 1.0) is applied to both actor and critic networks. Only the actor uses adaptive scaling; the critic retains its original architecture with linear output.
 
-\subsubsection{Stopping Behavior: Substantial Improvement}
+\subsubsection{Stopping Behavior: Complete Elimination}
 
-Adaptive scaling achieves \textbf{12 of 16 configurations} without stopping, compared to 6/16 in the baseline. Table~\ref{tab:adaptive_stopping} compares stopping episodes.
+Adaptive scaling achieves \textbf{all 16 of 16 configurations} without stopping, compared to 6/16 in the baseline. Table~\ref{tab:adaptive_stopping} compares stopping episodes.
 
 \begin{table}[htbp]
 \caption{Stopping Episodes: Baseline vs Adaptive Scaling}
@@ -661,19 +661,19 @@ Adaptive scaling achieves \textbf{12 of 16 configurations} without stopping, com
 \toprule
 \textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{Adaptive} \\
 \midrule
-0.1 & 0.1 & 161 & 1141 \\
+0.1 & 0.1 & 161 & \textbf{2000} \\
 0.1 & 0.01 & 162 & \textbf{2000} \\
 0.1 & 0.001 & 222 & \textbf{2000} \\
 0.1 & 0.0001 & 213 & \textbf{2000} \\
-0.01 & 0.1 & 260 & 752 \\
+0.01 & 0.1 & 260 & \textbf{2000} \\
 0.01 & 0.01 & 253 & \textbf{2000} \\
 0.01 & 0.001 & 259 & \textbf{2000} \\
 0.01 & 0.0001 & 260 & \textbf{2000} \\
-0.001 & 0.1 & 944 & 1307 \\
+0.001 & 0.1 & 944 & \textbf{2000} \\
 0.001 & 0.01 & 2000 & 2000 \\
 0.001 & 0.001 & 2000 & 2000 \\
 0.001 & 0.0001 & 2000 & 2000 \\
-0.0001 & 0.1 & 658 & 799 \\
+0.0001 & 0.1 & 658 & \textbf{2000} \\
 0.0001 & 0.01 & 2000 & 2000 \\
 0.0001 & 0.001 & 2000 & 2000 \\
 0.0001 & 0.0001 & 2000 & 2000 \\
@@ -681,26 +681,26 @@ Adaptive scaling achieves \textbf{12 of 16 configurations} without stopping, com
 \end{tabular}
 \end{table}
 
-Two patterns are notable. First, \textbf{all configurations with critic LR $\neq$ 0.1 avoid stopping entirely}. The eight configurations that previously stopped at high actor learning rates (161--260 episodes) now complete the full 2,000 episodes. Second, the four configurations with critic LR = 0.1 still stop, but at substantially delayed episodes: 1,141 vs 161 (actor LR 0.1), 752 vs 260 (actor LR 0.01), 1,307 vs 944 (actor LR 0.001), and 799 vs 658 (actor LR 0.0001). The critic LR = 0.1 column remains problematic across all mitigations---gradient clipping, LayerNorm, and now adaptive scaling all fail to fully prevent stopping at this extreme critic learning rate.
+Adaptive scaling with $r = 2$ and gradient clipping \textbf{completely eliminates stopping} across all 16 configurations. All ten configurations that previously stopped in the baseline (at episodes 161--944) now complete the full 2,000 episodes, including the four critic LR = 0.1 configurations that remained problematic under other mitigations (gradient clipping, LayerNorm). The combination of bounded pre-activations and gradient clipping proves sufficient to stabilize training even at the most extreme learning rate combinations.
 
-\textbf{Note on stopping detection:} Like InputNorm, the adaptive scaling actor includes registered buffers ($G_\text{min}$, $G_\text{max}$) in the state dictionary that could affect stopping detection. However, unlike InputNorm's running statistics (which change every forward pass), the strict min/max buffers only expand when \textit{new} pre-activation extremes are observed. The fact that stopping \textit{is} detected in 4 configurations---where $G_\text{min}$/$G_\text{max}$ stabilize alongside the learned weights---confirms that the detection mechanism remains reliable. In the 12 non-stopped configurations, the continued expansion of $G_\text{min}$/$G_\text{max}$ is consistent with ongoing weight updates that produce new pre-activation extremes.
+\textbf{Note on stopping detection:} Like InputNorm, the adaptive scaling actor includes registered buffers ($G_\text{min}$, $G_\text{max}$) in the state dictionary that could affect stopping detection. However, unlike InputNorm's running statistics (which change every forward pass), the strict min/max buffers only expand when \textit{new} pre-activation extremes are observed. In all 16 configurations, the continued expansion of $G_\text{min}$/$G_\text{max}$ is consistent with ongoing weight updates that produce new pre-activation extremes, confirming that the actors are genuinely learning rather than merely appearing active due to buffer changes.
 
 \subsubsection{Gradient Flow: How Adaptive Scaling Prevents Vanishing}
 
-The key mechanism is that adaptive scaling bounds the tanh input to $[-r, +r]$, ensuring a minimum gradient magnitude. The gradient of the actor output with respect to the raw pre-activation $z$ is:
+The key mechanism is that adaptive scaling bounds the tanh input to $[-2, +2]$, ensuring a minimum gradient magnitude. The gradient of the actor output with respect to the raw pre-activation $z$ is:
 
 \begin{equation}
 \frac{\partial \tanh(z_\text{scaled})}{\partial z} = \tanh'(z_\text{scaled}) \cdot \frac{r}{(G_\text{max} - G_\text{min})/2}
 \label{eq:adaptive_gradient}
 \end{equation}
 
-For values near the center of the distribution, $z_\text{scaled} \approx 0$ and $\tanh'(0) = 1$, yielding a gradient of $2r / (G_\text{max} - G_\text{min})$. Even at the extremes, $\tanh'(\pm 4) \approx 0.0013$ provides a small but nonzero gradient. In contrast, the baseline produces pre-activations of $\pm 10^6$ where $\tanh'(z) \approx 0$ to machine precision.
+For values near the center of the distribution, $z_\text{scaled} \approx 0$ and $\tanh'(0) = 1$, yielding a gradient of $2r / (G_\text{max} - G_\text{min})$. Even at the extremes, $\tanh'(\pm 2) \approx 0.07$ provides a substantial gradient---two orders of magnitude larger than $\tanh'(\pm 4) \approx 0.0013$. In contrast, the baseline produces pre-activations of $\pm 10^6$ where $\tanh'(z) \approx 0$ to machine precision.
 
-The trade-off is that as pre-activations grow and $(G_\text{max} - G_\text{min})$ expands, the scaling factor $r / ((G_\text{max} - G_\text{min})/2)$ shrinks, attenuating gradients. However, this attenuation is gradual (proportional to $1/G_\text{range}$) rather than catastrophic (exponentially decaying to zero as in unscaled tanh). This maintains sufficient gradient flow for the 12 non-stopped configurations to continue learning.
+The trade-off is that as pre-activations grow and $(G_\text{max} - G_\text{min})$ expands, the scaling factor $r / ((G_\text{max} - G_\text{min})/2)$ shrinks, attenuating gradients. However, this attenuation is gradual (proportional to $1/G_\text{range}$) rather than catastrophic (exponentially decaying to zero as in unscaled tanh). Combined with gradient clipping (max\_norm = 1.0) that prevents explosive updates, this maintains sufficient gradient flow for all 16 configurations to continue learning throughout training.
 
 \subsubsection{Saturation Analysis}
 
-A methodological note: our tracking infrastructure records saturation from \textit{raw} pre-activations (fc3 output before scaling), computing $|\tanh(z_\text{raw})| > 0.9$. Since $z_\text{raw}$ grows to extreme values, the reported saturation ratio approaches 1.0 for all configurations. However, the \textit{actual} network output is $\tanh(z_\text{scaled})$ where $z_\text{scaled} \in [-4, +4]$. The effective saturation---the fraction of outputs where the gradient is significantly attenuated---is determined by the distribution of $z_\text{scaled}$, not $z_\text{raw}$.
+A methodological note: our tracking infrastructure records saturation from \textit{raw} pre-activations (fc3 output before scaling), computing $|\tanh(z_\text{raw})| > 0.9$. Since $z_\text{raw}$ grows to extreme values, the reported saturation ratio approaches 1.0 for all configurations. However, the \textit{actual} network output is $\tanh(z_\text{scaled})$ where $z_\text{scaled} \in [-2, +2]$. The effective saturation---the fraction of outputs where the gradient is significantly attenuated---is determined by the distribution of $z_\text{scaled}$, not $z_\text{raw}$.
 
 Raw pre-activation magnitudes grow substantially over training, confirming that the actor weights continue to evolve:
 
@@ -713,15 +713,15 @@ Raw pre-activation magnitudes grow substantially over training, confirming that 
 \toprule
 \textbf{Actor LR} & \textbf{Early (ep 10)} & \textbf{Mid (ep 1000)} & \textbf{Late (ep 2000)} \\
 \midrule
-0.1 & $\pm 5.8 \times 10^4$ & $\pm 2.6 \times 10^{10}$ & $\pm 2.4 \times 10^{11}$ \\
-0.01 & $\pm 272$ & $\pm 1.3 \times 10^7$ & $\pm 9.5 \times 10^7$ \\
-0.001 & $\pm 14$ & $\pm 1.9 \times 10^5$ & $\pm 1.4 \times 10^6$ \\
-0.0001 & $\pm 2.7$ & $\pm 786$ & $\pm 4,822$ \\
+0.1 & $\pm 5.8 \times 10^4$ & $\pm 2.6 \times 10^{10}$ & $\pm 1.4 \times 10^{11}$ \\
+0.01 & $\pm 262$ & $\pm 6.0 \times 10^7$ & $\pm 5.3 \times 10^8$ \\
+0.001 & $\pm 11$ & $\pm 5.3 \times 10^5$ & $\pm 3.3 \times 10^6$ \\
+0.0001 & $\pm 2.3$ & $\pm 2.8 \times 10^3$ & $\pm 1.5 \times 10^4$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The continued growth of raw pre-activations across all non-stopped configurations confirms that the learned parameters are genuinely updating---if weights were frozen, pre-activations would be bounded by the finite state space and would plateau.
+The continued growth of raw pre-activations across all 16 configurations confirms that the learned parameters are genuinely updating---if weights were frozen, pre-activations would be bounded by the finite state space and would plateau.
 
 \subsubsection{Reward Performance: Significant Improvement for High Actor LR}
 
@@ -736,48 +736,48 @@ Unlike InputNorm and LayerNorm, adaptive scaling shows substantial reward improv
 \toprule
 \textbf{Actor LR} & \textbf{Critic LR} & \textbf{Baseline} & \textbf{Adaptive} & \textbf{$\Delta$} \\
 \midrule
-0.1 & 0.1 & $-$45,880 & $-$44,372 & +1,508 \\
-0.1 & 0.01 & $-$37,052 & $-$36,392 & +660 \\
-0.1 & 0.001 & $-$46,853 & $-$30,992 & +15,861 \\
-0.1 & 0.0001 & $-$45,690 & $-$30,576 & +15,114 \\
-0.01 & 0.1 & $-$44,277 & $-$32,032 & +12,245 \\
-0.01 & 0.01 & $-$35,381 & $-$36,172 & $-$791 \\
-0.01 & 0.001 & $-$47,863 & $-$32,520 & +15,343 \\
-0.01 & 0.0001 & $-$51,333 & $-$39,799 & +11,534 \\
-0.001 & 0.1 & $-$42,854 & $-$37,967 & +4,887 \\
-0.001 & 0.01 & $-$42,954 & $-$39,069 & +3,885 \\
-0.001 & 0.001 & $-$46,148 & $-$36,539 & +9,609 \\
-0.001 & 0.0001 & $-$47,920 & $-$50,041 & $-$2,121 \\
-0.0001 & 0.1 & $-$35,654 & $-$41,168 & $-$5,514 \\
-0.0001 & 0.01 & $-$29,325 & $-$42,618 & $-$13,293 \\
-0.0001 & 0.001 & $-$35,812 & $-$40,949 & $-$5,137 \\
-0.0001 & 0.0001 & $-$32,547 & $-$46,624 & $-$14,077 \\
+0.1 & 0.1 & $-$45,880 & $-$35,174 & +10,706 \\
+0.1 & 0.01 & $-$37,052 & $-$28,989 & +8,063 \\
+0.1 & 0.001 & $-$46,853 & $-$35,295 & +11,558 \\
+0.1 & 0.0001 & $-$45,690 & $-$34,811 & +10,879 \\
+0.01 & 0.1 & $-$44,277 & $-$46,055 & $-$1,778 \\
+0.01 & 0.01 & $-$35,381 & $-$38,041 & $-$2,660 \\
+0.01 & 0.001 & $-$47,863 & $-$32,027 & +15,836 \\
+0.01 & 0.0001 & $-$51,333 & $-$33,051 & +18,282 \\
+0.001 & 0.1 & $-$42,854 & $-$36,688 & +6,166 \\
+0.001 & 0.01 & $-$42,954 & $-$28,748 & +14,206 \\
+0.001 & 0.001 & $-$46,148 & $-$38,133 & +8,015 \\
+0.001 & 0.0001 & $-$47,920 & $-$28,168 & +19,752 \\
+0.0001 & 0.1 & $-$35,654 & $-$35,927 & $-$273 \\
+0.0001 & 0.01 & $-$29,325 & $-$36,866 & $-$7,541 \\
+0.0001 & 0.001 & $-$35,812 & $-$42,054 & $-$6,242 \\
+0.0001 & 0.0001 & $-$32,547 & $-$41,759 & $-$9,212 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The reward comparison reveals a clear pattern tied to actor learning rate:
 \begin{itemize}
-    \item \textbf{Actor LR = 0.1:} Three of four configurations show large improvements (up to +15,861), as actors that previously stopped within 200 episodes now train for the full 2,000. The best reward ($-$30,576 at critic LR = 0.0001) approaches the baseline's overall best ($-$29,325).
+    \item \textbf{Actor LR = 0.1:} All four configurations show large improvements (+8,063 to +11,558), as actors that previously stopped within 200 episodes now train for the full 2,000. The best reward ($-$28,989 at critic LR = 0.01) surpasses the baseline's overall best ($-$29,325).
 
-    \item \textbf{Actor LR = 0.01:} Three of four configurations improve substantially (up to +15,343). These represent the largest absolute gains, as configurations that stopped at $\sim$260 episodes now achieve competitive rewards.
+    \item \textbf{Actor LR = 0.01:} Two of four configurations improve substantially (up to +18,282 at critic LR = 0.0001), while two slightly degrade. The improvements come from configurations that stopped at $\sim$260 episodes in the baseline.
 
-    \item \textbf{Actor LR = 0.001:} Three of four configurations improve, with the largest gain at critic LR = 0.001 (+9,609).
+    \item \textbf{Actor LR = 0.001:} All four configurations improve, with the largest gain at critic LR = 0.0001 (+19,752), achieving the best single-configuration reward of $-$28,168.
 
-    \item \textbf{Actor LR = 0.0001:} All four configurations degrade, with the baseline's best (critic LR = 0.01, $-$29,325) dropping to $-$42,618. The adaptive scaling mechanism appears to interfere with the fine-grained updates that characterize successful low-LR training.
+    \item \textbf{Actor LR = 0.0001:} All four configurations degrade, with the baseline's best (critic LR = 0.01, $-$29,325) dropping to $-$36,866. The adaptive scaling mechanism appears to interfere with the fine-grained updates that characterize successful low-LR training.
 \end{itemize}
 
-Overall, \textbf{9 of 16 configurations improve} with adaptive scaling---the highest ratio of any mitigation tested. The best adaptive reward ($-$30,576) is within 4\% of the baseline's best ($-$29,325), while the number of competitive configurations ($<$ $-$40,000) increases from 5 in the baseline to 10 with adaptive scaling.
+Overall, \textbf{10 of 16 configurations improve} with adaptive scaling---the highest ratio of any mitigation tested. The best adaptive reward ($-$28,168) \textit{surpasses} the baseline's best ($-$29,325), while the number of competitive configurations ($<$ $-$40,000) increases from 6 in the baseline to 13 with adaptive scaling.
 
 \subsubsection{Interpretation}
 
 Adaptive scaling is the most effective mitigation strategy tested in this work:
 \begin{itemize}
-    \item \textbf{Stopping prevention:} 12/16 configurations avoid stopping, with only the extreme critic LR = 0.1 column remaining problematic---a consistent failure mode shared with all other mitigations.
+    \item \textbf{Complete stopping prevention:} All 16/16 configurations avoid stopping---the only mitigation besides InputNorm to achieve this, and without the detection artifacts that plague InputNorm. The combination of bounded pre-activations ($r = 2$) and gradient clipping resolves even the critic LR = 0.1 failure mode that persisted under all other mitigations.
 
     \item \textbf{Genuine learning:} Unlike InputNorm (which masked stopping detection through buffer drift), adaptive scaling maintains actual gradient flow through the tanh activation. The continued growth of raw pre-activations and the substantial reward improvements confirm that actors are genuinely learning.
 
-    \item \textbf{Reward improvement:} 9/16 configurations show better rewards than baseline, with the largest gains in previously-failed high-LR configurations. The best adaptive reward ($-$30,576) is competitive with the baseline's best ($-$29,325).
+    \item \textbf{Reward improvement:} 10/16 configurations show better rewards than baseline, with the largest gains in previously-failed high-LR configurations. The best adaptive reward ($-$28,168) surpasses the baseline's best ($-$29,325).
 
     \item \textbf{Low-LR degradation:} Like LayerNorm, adaptive scaling degrades the actor LR = 0.0001 configurations that already work well in the baseline. The scaling mechanism, designed to prevent saturation at high learning rates, introduces unnecessary perturbation at low learning rates where saturation is not the binding constraint.
 \end{itemize}
@@ -804,7 +804,7 @@ Large Actor & 3/16 & 1/16 & $-$29,363 & Capacity \\
 Grad.\ Clipping & 8/16 & 4/16 & $-$29,399 & Gradient limit \\
 LayerNorm & 13/16 & 8/16 & $-$26,094 & Output norm. \\
 InputNorm & 16/16$^*$ & 3/16 & $-$33,978 & Input norm. \\
-Adaptive Scaling & 12/16 & 9/16 & $-$30,576 & Output scaling \\
+Adaptive Scaling & 16/16 & 10/16 & $-$28,168 & Output scaling \\
 \bottomrule
 \multicolumn{5}{l}{\footnotesize $^\dagger$Configs with better last-10-episode reward than baseline.} \\
 \multicolumn{5}{l}{\footnotesize $^*$Detection artifact; see Section~6.10.4.}
@@ -813,12 +813,12 @@ Adaptive Scaling & 12/16 & 9/16 & $-$30,576 & Output scaling \\
 
 Several patterns emerge from this comparison:
 
-\textbf{Convergence rate, not stopping rate, is the critical metric.} The ``Configs Improved'' column in Table~\ref{tab:mitigation_summary} is more informative than ``No-Stop Configs'' for evaluating mitigation effectiveness. InputNorm achieves the highest no-stop count (16/16) but the lowest convergence improvement (3/16 configs with better reward). In contrast, adaptive scaling has fewer no-stop configurations (12/16) but the highest convergence rate (9/16 configs improved). This demonstrates that \textit{preventing stopping is necessary but not sufficient}---the mitigation must also enable the actor to learn a better policy.
+\textbf{Convergence rate, not stopping rate, is the critical metric.} The ``Configs Improved'' column in Table~\ref{tab:mitigation_summary} is more informative than ``No-Stop Configs'' for evaluating mitigation effectiveness. InputNorm achieves 16/16 no-stop but the lowest convergence improvement (3/16 configs with better reward). In contrast, adaptive scaling achieves both 16/16 no-stop \textit{and} the highest convergence rate (10/16 configs improved). This demonstrates that \textit{preventing stopping is necessary but not sufficient}---the mitigation must also enable the actor to learn a better policy.
 
 \textbf{Location matters more than mechanism.} The two most effective mitigations---LayerNorm and adaptive scaling---both operate at or near the tanh output layer. LayerNorm normalizes pre-activations; adaptive scaling rescales them. Both maintain gradient flow through the critical bottleneck. In contrast, InputNorm (at the network input) and large actor (distributed capacity) fail to address the actual gradient vanishing point, producing either detection artifacts or worse performance.
 
-\textbf{Critic LR = 0.1 is universally problematic.} Across all mitigations, configurations with critic LR = 0.1 remain the most likely to exhibit stopping or degraded performance. This suggests that extreme critic learning rates create instability that cannot be resolved by actor-side modifications alone. Gradient clipping partially addresses this specific failure mode by limiting critic gradient explosion.
+\textbf{Critic LR = 0.1 is nearly universally problematic.} Across most mitigations, configurations with critic LR = 0.1 remain the most likely to exhibit stopping or degraded performance. Adaptive scaling is the notable exception: by combining bounded pre-activations with gradient clipping on both actor and critic, it fully resolves the critic LR = 0.1 stopping failure. However, reward performance at critic LR = 0.1 remains mixed, suggesting that extreme critic learning rates create optimization challenges beyond stopping alone.
 
 \textbf{Low actor LR configurations degrade.} Both LayerNorm and adaptive scaling improve high-LR configurations at the cost of degrading low-LR ones (actor LR = 0.0001). The baseline's best configuration (actor LR = 0.0001, critic LR = 0.01, reward $-$29,325) worsens with every mitigation except gradient clipping, which leaves it unchanged. This suggests that the mitigations introduce perturbation that disrupts the fine-grained learning that already succeeds in the conservative-LR regime.
 
-\textbf{No single mitigation dominates.} LayerNorm achieves the best single-configuration reward ($-$26,094) and the most no-stop configurations (13/16). Adaptive scaling achieves the most improved configurations (9/16) and the most no-stop configurations among genuine (non-artifact) mitigations (12/16). An optimal strategy might combine approaches---for example, using adaptive scaling for high actor learning rates while leaving low-LR configurations unmodified, or combining gradient clipping (for critic LR = 0.1) with adaptive scaling (for actor-side saturation).
+\textbf{Adaptive scaling is the most complete mitigation.} Adaptive scaling achieves the best overall profile: 16/16 no-stop, 10/16 improved reward, and a best reward ($-$28,168) that surpasses the baseline's best ($-$29,325). LayerNorm achieves a better single-configuration reward ($-$26,094) but with fewer no-stop configurations (13/16). An optimal strategy might combine approaches---for example, using adaptive scaling for high actor learning rates while leaving low-LR configurations unmodified.

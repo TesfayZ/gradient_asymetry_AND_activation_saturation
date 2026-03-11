@@ -38,6 +38,7 @@ gradient_asymmetry/
     ├── large_actor_experiment/     # 512→128 actor (28× more params)
     ├── layernorm_experiment/       # LayerNorm before tanh output
     ├── linear_activation_experiment/ # Linear hidden activations
+    ├── adaptive_scaling_experiment/ # Adaptive tanh scaling + gradient clipping
     ├── gradient_clipping_experiment/ # Gradient clipping (max_norm=1.0)
     ├── fullnorm_experiment/        # Full normalization (cancelled)
     └── plot_*.py, figures/         # Analysis scripts and plots
@@ -54,7 +55,7 @@ gradient_asymmetry/
 | **Gradient Clipping** (norm=1.0) | 8/16 | 4/16 | -29,399 | Partially effective — helps critic-LR=0.1 only |
 | **LayerNorm** | 13/16 | 8/16 | -26,094 | Mixed — best single reward but degrades low-LR configs |
 | **InputNorm** | 16/16* | 3/16 | -33,978 | **Misleading** — stops detection artifact; 13/16 worse reward |
-| **Adaptive Scaling** | 12/16 | 9/16 | -30,576 | **Most effective** by convergence criterion |
+| **Adaptive Scaling** | 16/16 | 10/16 | -28,168 | **Most effective** — best reward, most improved configs, complete stop prevention |
 | **Linear Activations** | — | — | — | Failed — pre-activation explosion 17× worse |
 | **Full Normalization** | — | — | — | Cancelled — training prohibitively slow |
 
