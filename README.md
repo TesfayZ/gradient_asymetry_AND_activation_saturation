@@ -90,7 +90,7 @@ cd paper && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex ma
 }
 ```
 
-**Related:** [CCM-MADRL](https://doi.org/10.1145/3768579) (Gebrekidan, Stein, Norman — ACM TAAS 2025)
+**Related:** [CCM-MADRL](https://doi.org/10.1145/3768579) (Gebrekidan, Stein, Norman — ACM TAAS 2026)
 
 ## License
 
